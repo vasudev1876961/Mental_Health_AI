@@ -1,0 +1,35 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# PyTorch & Model Checkpoints
+*.pt
+*.pth
+*.onnx
+*.bin
+checkpoints/
+outputs/
+
+# Virtual Environments
+venv/
+.venv/
+env/
+ENV/
+
+# IDE & Editor Settings
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Data & Datasets
+data/raw/
+data/processed/
+data/synthetic/*.json
+!data/synthetic/.gitkeep
+
+# Logs & Operating System
+*.log
+.DS_Store
+Thumbs.db

@@ -1,0 +1,98 @@
+# Master Configuration File for Mental Health Federated AI System
+
+system:
+  seed: 42
+  device: "cuda" # fallback to cpu automatically if cuda unavailable
+
+paths:
+  data_dir: "data"
+  synthetic_dir: "data/synthetic"
+  raw_dir: "data/raw"
+  processed_dir: "data/processed"
+  checkpoints_dir: "checkpoints"
+  outputs_dir: "outputs"
+
+# Vision Feature Extractor
+vision:
+  target_fps: 30
+  frame_width: 640
+  frame_height: 480
+  landmark_points: 468
+  features:
+    ear: true          # Eye Aspect Ratio
+    mar: true          # Mouth Aspect Ratio
+    head_pose: true    # Pitch, Yaw, Roll
+    gaze: true         # Gaze vector (x, y, z)
+    affect: true       # Emotion probability vector (7 states)
+  feature_dim: 18      # 1(ear) + 1(mar) + 3(pose) + 3(gaze) + 3(eye/mouth metrics) + 7(emotions)
+
+# Audio Feature Extractor
+audio:
+  sample_rate: 16000
+  n_mfcc: 13
+  n_fft: 2048
+  hop_length: 512
+  features:
+    pitch: true
+    energy: true
+    speech_rate: true
+    mfcc: true
+  feature_dim: 16      # 1(pitch) + 1(energy) + 1(speech_rate) + 13(mfcc)
+
+# NLP Text Encoder
+text:
+  model_name: "distilbert-base-uncased"
+  max_length: 64
+  embedding_dim: 128   # Projected dimension
+
+# Temporal Modeling
+temporal:
+  window_size: 30       # Frames per sequence (e.g. 1 second at 30 fps or sliding window)
+  step_size: 5         # Sliding window stride
+  model_type: "transformer" # choices: lstm, gru, transformer
+  hidden_dim: 128
+  num_layers: 2
+  nhead: 4             # For Transformer
+  dropout: 0.1
+
+# Multimodal Fusion
+fusion:
+  strategy: "cross_attention" # choices: early, late, cross_attention
+  fused_dim: 128
+  missing_modality_prob: 0.15 # For robustness training
+
+# Risk Prediction Targets
+target:
+  primary: "stress_score"    # Continuous 0-100 score
+  classification_thresholds:
+    low: [0, 33]
+    medium: [34, 66]
+    high: [67, 100]
+  secondary:
+    - "fatigue"
+    - "attention"
+    - "emotional_state"
+
+# Federated Learning Settings
+federated:
+  num_clients: 4
+  num_rounds: 10
+  local_epochs: 3
+  batch_size: 16
+  learning_rate: 0.001
+  strategy: "fedprox"        # choices: fedavg, fedprox
+  fedprox_mu: 0.01           # Proximal term penalty parameter
+  partition_mode: "non_iid"  # choices: iid, non_iid
+
+# Differential Privacy Settings
+privacy:
+  enabled: true
+  target_epsilon: 3.0
+  target_delta: 1e-5
+  max_grad_norm: 1.0
+  noise_multiplier: 0.5
+
+# Real-Time Inference & Quality
+inference:
+  quality_threshold: 0.4     # Minimum face/audio clarity score to render confident prediction
+  smoothing_alpha: 0.2       # Exponential moving average factor for UI score stability

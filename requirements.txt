@@ -1,0 +1,39 @@
+# Core Deep Learning & Computational Libraries
+torch>=2.0.0
+torchvision>=0.15.0
+numpy>=1.24.0
+pandas>=2.0.0
+scipy>=1.10.0
+scikit-learn>=1.2.0
+
+# Computer Vision & Landmark Extraction
+opencv-python>=4.7.0
+mediapipe>=0.10.0
+
+# Audio Processing
+librosa>=0.10.0
+soundfile>=0.12.0
+
+# NLP & Speech-to-Text
+transformers>=4.30.0
+huggingface-hub>=0.16.0
+
+# Federated Learning & Privacy
+flwr>=1.4.0
+opacus>=1.4.0
+
+# Explainable AI & Metrics
+shap>=0.42.0
+captum>=0.6.0
+matplotlib>=3.7.0
+seaborn>=0.12.0
+plotly>=5.14.0
+
+# Dashboard & Inference Web UI
+streamlit>=1.24.0
+fastapi>=0.95.0
+uvicorn>=0.22.0
+
+# Configuration & Utilities
+pyyaml>=6.0
+tqdm>=4.65.0
