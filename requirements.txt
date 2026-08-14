@@ -33,6 +33,7 @@ plotly>=5.14.0
 streamlit>=1.24.0
 fastapi>=0.95.0
 uvicorn>=0.22.0
+httpx>=0.24.0
 
 # Configuration & Utilities
 pyyaml>=6.0
