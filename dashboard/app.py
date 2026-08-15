@@ -5,6 +5,8 @@ Usage:
     streamlit run dashboard/app.py
 """
 
+import os
+import sys
 import time
 import numpy as np
 import pandas as pd
@@ -12,6 +14,9 @@ import torch
 import streamlit as st
 import plotly.express as px
 import plotly.graph_objects as go
+
+# Ensure repository root is on sys.path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from src.inference.realtime import RealtimeInferenceEngine
 
