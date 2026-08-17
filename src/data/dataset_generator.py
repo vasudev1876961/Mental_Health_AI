@@ -232,6 +232,6 @@ if __name__ == "__main__":
     generator.generate_dataset(
         num_subjects=args.num_subjects,
         output_dir=args.output_dir,
-        num_sequences_per_subject=args.seq_per-subj if hasattr(args, "seq_per_subj") else 10,
+        num_sequences_per_subject=args.seq_per_subj if hasattr(args, "seq_per_subj") else 10,
         window_size=args.window_size,
     )
