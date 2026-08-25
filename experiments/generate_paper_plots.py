@@ -57,7 +57,7 @@ def generate_plots(output_dir: str = "outputs/plots", metrics_path: str = "outpu
     # Figure 1: Modality Ablation Comparison
     plt.figure(figsize=(7, 4.5))
     df_abl = df[df["Category"] == "Modality Ablations"]
-    ax1 = sns.barplot(data=df_abl, x="Experiment_Name", y="MAE", palette="Blues_d")
+    ax1 = sns.barplot(data=df_abl, x="Experiment_Name", y="MAE", hue="Experiment_Name", palette="Blues_d", legend=False)
     plt.title("Figure 1: Modality Ablation Comparison (Lower MAE is Better)", fontsize=11, fontweight="bold", pad=10)
     plt.ylabel("Mean Absolute Error (MAE)")
     plt.xlabel("")
@@ -72,7 +72,7 @@ def generate_plots(output_dir: str = "outputs/plots", metrics_path: str = "outpu
     # Figure 2: Federated Learning & Non-IID Robustness
     plt.figure(figsize=(8, 4.5))
     df_fl = df[df["Category"] == "Federated Learning"]
-    ax2 = sns.barplot(data=df_fl, x="Experiment_Name", y="MAE", palette="Spectral")
+    ax2 = sns.barplot(data=df_fl, x="Experiment_Name", y="MAE", hue="Experiment_Name", palette="Spectral", legend=False)
     plt.title("Figure 2: Federated Learning Heterogeneity & FedProx Robustness", fontsize=11, fontweight="bold", pad=10)
     plt.ylabel("Mean Absolute Error (MAE)")
     plt.xlabel("")

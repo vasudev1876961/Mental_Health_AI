@@ -10,6 +10,7 @@ Usage:
 import numpy as np
 import torch
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 
@@ -19,6 +20,15 @@ app = FastAPI(
     title="Privacy-Preserving Mental Health AI API",
     description="Real-Time Multimodal Mental Health Risk Assessment API",
     version="1.0.0",
+)
+
+# Enable CORS Middleware for cross-origin client integration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Shared inference engine instance
