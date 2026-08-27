@@ -25,11 +25,13 @@ class ModelTrainer:
         learning_rate: float = 0.001,
         device: torch.device = torch.device("cpu"),
         checkpoint_dir: str = "checkpoints",
+        enable_contrastive: bool = False,
     ):
         self.model = model.to(device)
         self.loss_fn = loss_fn
         self.device = device
         self.checkpoint_dir = checkpoint_dir
+        self.enable_contrastive = enable_contrastive
         os.makedirs(checkpoint_dir, exist_ok=True)
 
         if optimizer is None:
@@ -57,7 +59,7 @@ class ModelTrainer:
             }
 
             self.optimizer.zero_grad()
-            preds, _, _ = self.model(v_seq, a_feat, t_feat, mask=mask)
+            preds, _, _ = self.model(v_seq, a_feat, t_feat, mask=mask, return_contrastive=self.enable_contrastive)
             loss, _ = self.loss_fn(preds, targets)
 
             loss.backward()

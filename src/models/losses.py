@@ -19,12 +19,14 @@ class MultiTaskRiskLoss(nn.Module):
         weight_stress_cls: float = 0.5,
         weight_fatigue: float = 0.2,
         weight_attention: float = 0.2,
+        weight_contrastive: float = 0.1,
     ):
         super().__init__()
         self.w_reg = weight_stress_reg
         self.w_cls = weight_stress_cls
         self.w_fatigue = weight_fatigue
         self.w_attention = weight_attention
+        self.w_contrastive = weight_contrastive
 
         self.huber = nn.HuberLoss(delta=5.0)
         self.cross_entropy = nn.CrossEntropyLoss()
@@ -35,7 +37,7 @@ class MultiTaskRiskLoss(nn.Module):
     ) -> Tuple[torch.Tensor, Dict[str, float]]:
         """
         Args:
-            predictions: Output dict from RiskPredictionHeads
+            predictions: Output dict from RiskPredictionHeads (and optional contrastive_loss)
             targets: Target dict from DataLoader batch
 
         Returns:
@@ -60,5 +62,11 @@ class MultiTaskRiskLoss(nn.Module):
             "loss_fatigue": float(loss_fatigue.item()),
             "loss_attention": float(loss_attention.item()),
         }
+
+        if "contrastive_loss" in predictions and predictions["contrastive_loss"] is not None:
+            loss_cl = predictions["contrastive_loss"]
+            total_loss = total_loss + self.w_contrastive * loss_cl
+            loss_components["loss_contrastive"] = float(loss_cl.item())
+            loss_components["total_loss"] = float(total_loss.item())
 
         return total_loss, loss_components

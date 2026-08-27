@@ -85,23 +85,24 @@ uvicorn src.api.server:app --reload --port 8000
 python demo_predict_sample.py
 ```
 
-### D. Run Automated Research Experiments (E1 to E12)
+### D. Run Automated Research Experiments (E1 to E15)
 ```bash
 python experiments/run_experiments.py --mode fast
 ```
 Outputs exported to `outputs/metrics/experiment_summary.csv`.
 
-### E. Generate 300 DPI Publication Paper Figures
+### E. Generate 300 DPI Publication Paper Figures (Fig 1 to 7)
 ```bash
 python experiments/generate_paper_plots.py
 ```
-Figures saved to `outputs/plots/` (`fig1_modality_ablation.png`, `fig2_federated_heterogeneity.png`, `fig3_privacy_utility_tradeoff.png`, `fig4_edge_latency_optimization.png`).
+Figures saved to `outputs/plots/` (`fig1_modality_ablation.png`, `fig2_federated_heterogeneity.png`, `fig3_privacy_utility_tradeoff.png`, `fig4_edge_latency_optimization.png`, `fig5_personalized_fedper.png`, `fig6_contrastive_alignment_matrix.png`, `fig7_secagg_noise_cancellation.png`).
 
-### F. Export Academic Research Paper Draft
+### F. Export Academic Research Paper Draft & LaTeX Manuscript
 ```bash
 python experiments/export_paper_report.py
+python experiments/build_latex_paper.py
 ```
-Manuscript draft generated at `outputs/paper_draft.md`.
+Manuscript drafts generated at `outputs/paper_draft.md` and `outputs/paper_ieee.tex`.
 
 ---
 
@@ -116,9 +117,9 @@ docker-compose up --build
 
 ---
 
-## 5. Running the Unit Test Suite (39 Tests)
+## 5. Running the Unit Test Suite (46 Tests)
 
-Run the full automated test suite across all 13 modules:
+Run the full automated test suite across all 15 modules:
 ```bash
 python -m unittest discover -s tests -v
 ```

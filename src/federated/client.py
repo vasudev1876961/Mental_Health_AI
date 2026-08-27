@@ -10,6 +10,8 @@ import torch
 from torch.utils.data import DataLoader
 from typing import Dict, List, Tuple
 
+from src.federated.fedper import FedPerManager
+
 try:
     import flwr as fl
     NumPyClientBase = fl.client.NumPyClient
@@ -29,6 +31,8 @@ class MentalHealthFlowerClient(NumPyClientBase):
         loss_fn: torch.nn.Module,
         learning_rate: float = 0.001,
         fedprox_mu: float = 0.0,
+        is_fedper: bool = False,
+        personal_layer_prefixes: List[str] = None,
         device: torch.device = torch.device("cpu"),
     ):
         self.client_id = client_id
@@ -38,17 +42,35 @@ class MentalHealthFlowerClient(NumPyClientBase):
         self.loss_fn = loss_fn
         self.lr = learning_rate
         self.fedprox_mu = fedprox_mu
+        self.is_fedper = is_fedper
+        self.fedper_manager = FedPerManager(personal_layer_prefixes) if is_fedper else None
         self.device = device
 
     def get_parameters(self, config: Dict[str, str] = None) -> List[np.ndarray]:
-        """Extracts model weights as numpy arrays."""
-        return [val.cpu().numpy() for val in self.model.state_dict().values()]
+        """Extracts model weights as numpy arrays (filtered if FedPer is active)."""
+        state_dict = self.model.state_dict()
+        if self.is_fedper and self.fedper_manager:
+            state_dict = self.fedper_manager.extract_global_parameters(state_dict)
+        return [val.cpu().numpy() for val in state_dict.values()]
 
     def set_parameters(self, parameters: List[np.ndarray]):
         """Sets model weights from numpy array parameter list."""
-        params_dict = zip(self.model.state_dict().keys(), parameters)
-        state_dict = OrderedDict({k: torch.tensor(v).to(self.device) for k, v in params_dict})
-        self.model.load_state_dict(state_dict, strict=True)
+        if self.is_fedper and self.fedper_manager:
+            all_keys = list(self.model.state_dict().keys())
+            global_keys = [k for k in all_keys if not self.fedper_manager.is_personal_layer(k)]
+            current_state = self.model.state_dict()
+            if len(parameters) == len(all_keys):
+                for k, v in zip(all_keys, parameters):
+                    if not self.fedper_manager.is_personal_layer(k):
+                        current_state[k] = torch.tensor(v).to(self.device)
+            else:
+                for k, v in zip(global_keys, parameters):
+                    current_state[k] = torch.tensor(v).to(self.device)
+            self.model.load_state_dict(current_state, strict=True)
+        else:
+            params_dict = zip(self.model.state_dict().keys(), parameters)
+            state_dict = OrderedDict({k: torch.tensor(v).to(self.device) for k, v in params_dict})
+            self.model.load_state_dict(state_dict, strict=True)
 
     def fit(
         self, parameters: List[np.ndarray], config: Dict[str, str]

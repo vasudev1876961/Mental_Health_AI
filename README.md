@@ -61,13 +61,15 @@ A modular, privacy-preserving deep learning platform that analyzes real-time vid
 
 - **Real-Time Vision Pipeline**: Facial detection, 3D face mesh (468 landmarks), Eye Aspect Ratio (EAR), Mouth Aspect Ratio (MAR), 3D head pose (pitch/yaw/roll), gaze tracking, and affect estimation.
 - **Multimodal Audio & NLP**: Pitch/F0, energy, speech rate, MFCCs, local Speech-to-Text (STT), and RoBERTa semantic text embeddings.
+- **Multimodal Contrastive Alignment (InfoNCE)**: Self-supervised representation alignment across Vision, Audio, and Text for robustness against missing sensor channels.
 - **Temporal Modeling**: Sliding-window BiLSTM / GRU / Temporal Transformer modeling micro-expressions and stress progression.
 - **Missing-Modality Fallback**: Masking vector architecture allowing continuous inference when camera, mic, or text is unavailable.
-- **Federated Learning**: Subject-partitioned simulation across edge clients comparing Centralized vs FedAvg IID vs FedAvg Non-IID vs FedProx Non-IID.
+- **Personalized Federated Learning (FedPer)**: Edge client adaptation preserving subject-specific baseline heads while synchronizing global representation backbones.
+- **Cryptographic Secure Aggregation (SecAgg)**: Zero-sum pairwise secret sharing preventing server-side gradient inspection.
 - **Differential Privacy & Security**: PyTorch/Opacus clipping and noise injection with formal $(\epsilon, \delta)$ accounting.
 - **Multi-Level XAI**: SHAP behavioral feature importance, Grad-CAM facial heatmaps, and Modality Attribution breakdown (Vision vs Audio vs Text %).
-- **Interactive Web Dashboard**: Streamlit UI with live webcam feed, real-time gauges, stress timeline, XAI panels, and FL monitoring.
-- **FastAPI Edge Server**: REST API & WebSocket endpoints for streaming edge client predictions.
+- **Interactive Web Dashboard**: 4-tab Streamlit UI with live webcam feed, real-time gauges, stress timeline, XAI panels, FedPer client simulator, SecAgg cryptographic verification, and Contrastive space visualizer.
+- **FastAPI Edge Server**: REST API & WebSocket endpoints for streaming edge client predictions, FedPer updates, and SecAgg verification.
 
 ---
 
@@ -83,14 +85,15 @@ streamlit run dashboard/app.py
 # 3. Run terminal sample predictor demo
 python demo_predict_sample.py
 
-# 4. Run automated E1-E12 research experiments
+# 4. Run automated E1-E15 research experiments
 python experiments/run_experiments.py --mode fast
 
-# 5. Generate 300 DPI research figures & paper draft
+# 5. Generate 300 DPI research figures (7 plots) & paper drafts (Markdown + LaTeX)
 python experiments/generate_paper_plots.py
 python experiments/export_paper_report.py
+python experiments/build_latex_paper.py
 
-# 6. Run full unit test suite (39 tests)
+# 6. Run full unit test suite (46 tests)
 python -m unittest discover -s tests
 ```
 

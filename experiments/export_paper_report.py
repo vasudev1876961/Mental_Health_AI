@@ -81,11 +81,30 @@ $$\\min_{w} h_k(w) = L_k(w) + \\frac{\\mu}{2} ||w - w^t||^2$$
 
 where $\\mu > 0$ controls the proximal penalty for deviating from global server parameters $w^t$.
 
+### 2.4 Multimodal Contrastive Alignment (InfoNCE Loss)
+To align disparate sensor modalities into a unified representation space, we minimize the symmetric InfoNCE loss across positive pairs $(z_i, z_j)$:
+
+$$\\mathcal{L}_{\\text{InfoNCE}}(z_i, z_j) = -\\log \\frac{\\exp(\\text{sim}(z_i, z_j)/\\tau)}{\\sum_{k=1}^B \\exp(\\text{sim}(z_i, z_k)/\\tau)}$$
+
+$$\\mathcal{L}_{\\text{Contrastive}} = \\frac{1}{3} \\left[ \\mathcal{L}_{\\text{InfoNCE}}(z_v, z_a) + \\mathcal{L}_{\\text{InfoNCE}}(z_v, z_t) + \\mathcal{L}_{\\text{InfoNCE}}(z_a, z_t) \\right]$$
+
+### 2.5 Personalized Federated Learning (FedPer)
+To accommodate subject-specific baseline physiological shifts, parameters are partitioned into shared representation layers $W_g$ and client-personalized prediction heads $W_p^{(k)}$:
+
+$$W^{(k)} = [W_g \\parallel W_p^{(k)}]$$
+
+Only $W_g$ is communicated to the central server during aggregation, while $W_p^{(k)}$ adapts locally.
+
+### 2.6 Cryptographic Secure Aggregation (SecAgg)
+To prevent server-side gradient reconstruction, client $u$ injects zero-sum pairwise secret masks $s_{u,v}$:
+
+$$y_u = x_u + \\sum_{v > u} s_{u,v} - \\sum_{v < u} s_{v,u} \\implies \\sum_{u=1}^N y_u = \\sum_{u=1}^N x_u$$
+
 ---
 
-## 3. Experimental Evaluation Matrix (E1 – E12)
+## 3. Experimental Evaluation Matrix (E1 – E15)
 
-The system was systematically benchmarked across 12 research experiment setups:
+The system was systematically benchmarked across 15 research experiment setups:
 
 """ + metrics_table_md + """
 
@@ -100,16 +119,16 @@ Outputs produced by this framework are **AI-generated screening/risk indicators*
 ## References
 1. McMahan, B., et al. "Communication-Efficient Learning of Deep Networks from Decentralized Data." AISTATS (2017).
 2. Li, T., et al. "Federated Optimization in Heterogeneous Networks." MLSys (2020).
-3. Abadi, M., et al. "Deep Learning with Differential Privacy." ACM CCS (2016).
-4. Vaswani, A., et al. "Attention Is All You Need." NeurIPS (2017).
+3. Arivazhagan, M. G., et al. "Federated Learning with Personalization Layers." arXiv:1912.00818 (2019).
+4. Bonawitz, K., et al. "Practical Secure Aggregation for Privacy-Preserving Machine Learning." ACM CCS (2017).
+5. Abadi, M., et al. "Deep Learning with Differential Privacy." ACM CCS (2016).
+6. Vaswani, A., et al. "Attention Is All You Need." NeurIPS (2017).
 """
 
-    md_path = os.path.join(output_dir, "paper_draft.md")
-    with open(md_path, "w", encoding="utf-8") as f:
+    output_path = os.path.join(output_dir, "paper_draft.md")
+    with open(output_path, "w", encoding="utf-8") as f:
         f.write(markdown_content)
-
-    print(f"Successfully generated research paper draft in '{md_path}'.")
-    return md_path
+    print(f"Successfully generated academic paper draft in '{output_path}'.")
 
 
 if __name__ == "__main__":
