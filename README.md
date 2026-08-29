@@ -1,6 +1,6 @@
 # Privacy-Preserving Real-Time Multimodal Mental Health Risk Assessment Using Federated Learning
 
-[![CI - Multimodal Mental Health FL Pipeline](https://github.com/YOUR_USERNAME/AI-MENTAL/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/AI-MENTAL/actions/workflows/ci.yml)
+[![CI - Multimodal Mental Health FL Pipeline](https://github.com/vasudev1876961/Mental_Health_AI/actions/workflows/ci.yml/badge.svg)](https://github.com/vasudev1876961/Mental_Health_AI/actions/workflows/ci.yml)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 

@@ -8,6 +8,7 @@ Usage:
 import os
 import sys
 import time
+import cv2
 import numpy as np
 import pandas as pd
 import torch
@@ -127,9 +128,45 @@ tab1, tab2, tab3, tab4 = st.tabs([
 with tab1:
     elapsed = time.time() - st.session_state.start_time
     synthetic_frame = np.full((480, 640, 3), 180, dtype=np.uint8)
+    
+    current_frame = synthetic_frame
+    camera_active = False
+
+    if input_mode == "Live Webcam Feed":
+        cam_method = st.radio(
+            "📹 Select Webcam Capture Method:",
+            ["Browser Camera Viewfinder (Click to snap / enable in browser)", "Direct Hardware Device (OpenCV)"],
+            horizontal=True,
+        )
+        
+        if cam_method == "Browser Camera Viewfinder (Click to snap / enable in browser)":
+            img_file_buffer = st.camera_input("Grant camera permission and take a live photo:")
+            if img_file_buffer is not None:
+                bytes_data = img_file_buffer.getvalue()
+                cv2_img = cv2.imdecode(np.frombuffer(bytes_data, np.uint8), cv2.IMREAD_COLOR)
+                if cv2_img is not None:
+                    current_frame = cv2_img
+                    camera_active = True
+                    st.success("✅ Real-time camera frame captured and processed through 468-point face mesh & emotion model!")
+        else:
+            grab_col1, grab_col2 = st.columns([1, 2])
+            with grab_col1:
+                cap_btn = st.button("📸 Grab Frame from Device Camera")
+            if cap_btn or auto_refresh:
+                cap = cv2.VideoCapture(0)
+                if cap.isOpened():
+                    ret, cv_frame = cap.read()
+                    cap.release()
+                    if ret and cv_frame is not None:
+                        current_frame = cv_frame
+                        camera_active = True
+                    else:
+                        st.warning("⚠️ Could not read frame from local camera index 0.")
+                else:
+                    st.warning("⚠️ Could not access local camera (Index 0). If you are using a browser, please select 'Browser Camera Viewfinder' above.")
 
     res = st.session_state.engine.process_frame(
-        image=synthetic_frame,
+        image=current_frame,
         audio_signal=np.sin(2 * np.pi * 300 * np.linspace(0, 0.5, 8000)),
         transcript_text="I feel slightly overwhelmed by the work load today.",
     )
@@ -142,8 +179,9 @@ with tab1:
 
     with col1:
         st.subheader("Live Video Stream & Overlays")
-        display_frame = res["heatmap_frame"] if show_heatmap else synthetic_frame
-        st.image(display_frame, channels="BGR", use_container_width=True, caption="Face Detection & Grad-CAM Attention Saliency")
+        display_frame = res["heatmap_frame"] if (show_heatmap and res.get("heatmap_frame") is not None) else current_frame
+        caption_text = "Live Face Detection & Grad-CAM Attention Saliency" if camera_active else "Simulated Frame (Use camera controls above to capture your live face)"
+        st.image(display_frame, channels="BGR", use_container_width=True, caption=caption_text)
 
         b_col1, b_col2, b_col3, b_col4 = st.columns(4)
         b_col1.metric("EAR (Eye Closure)", f"{res['behavior_features']['ear']}")
