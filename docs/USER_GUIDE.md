@@ -67,35 +67,53 @@ pip install -r requirements.txt
 
 ## 3. How to Launch System Features
 
-### A. Run Interactive Streamlit Web Dashboard
+### A. Run Interactive Streamlit Web Dashboard (5 Tabs)
 ```bash
 streamlit run dashboard/app.py
 ```
 Open browser at: **`http://localhost:8501`**
+- **Tab 1**: Real-Time Multimodal Assessment (Vision 468 mesh, Audio MFCC, NLP RoBERTa, SHAP XAI, Grad-CAM, and 90% Conformal Interval bounds)
+- **Tab 2**: Personalized Federated Learning (FedPer client profiles & head adaptation)
+- **Tab 3**: Cryptographic Secure Aggregation (SecAgg zero-sum noise cancellation)
+- **Tab 4**: Self-Supervised Contrastive Alignment (InfoNCE cosine hyper-sphere)
+- **Tab 5**: Byzantine Poisoning Defense, Conformal Bounds, Dynamic Sensor Imputation & Continual Learning (EWC)
 
 ### B. Run FastAPI REST & WebSocket Edge API Server
 ```bash
 uvicorn src.api.server:app --reload --port 8000
 ```
 - Interactive Swagger API Docs: **`http://127.0.0.1:8000/docs`**
-- WebSocket Endpoint: `ws://127.0.0.1:8000/ws/predict`
+- WebSocket Streaming Endpoint: `ws://127.0.0.1:8000/ws/predict`
+- Byzantine Defense Endpoint: `POST /defense/byzantine/aggregate`
+- Conformal Prediction Endpoint: `POST /uncertainty/conformal/predict`
+- Sensor Imputation Endpoint: `POST /fusion/impute`
 
 ### C. Run Terminal Sample Predictor Demo
 ```bash
 python demo_predict_sample.py
 ```
 
-### D. Run Automated Research Experiments (E1 to E15)
+### D. Run Automated Research Experiments (E1 to E20)
 ```bash
 python experiments/run_experiments.py --mode fast
 ```
-Outputs exported to `outputs/metrics/experiment_summary.csv`.
+Outputs exported to `outputs/metrics/experiment_summary.csv` and `outputs/metrics/experiment_summary.json`.
 
-### E. Generate 300 DPI Publication Paper Figures (Fig 1 to 7)
+### E. Generate 300 DPI Publication Paper Figures (Fig 1 to 10)
 ```bash
 python experiments/generate_paper_plots.py
 ```
-Figures saved to `outputs/plots/` (`fig1_modality_ablation.png`, `fig2_federated_heterogeneity.png`, `fig3_privacy_utility_tradeoff.png`, `fig4_edge_latency_optimization.png`, `fig5_personalized_fedper.png`, `fig6_contrastive_alignment_matrix.png`, `fig7_secagg_noise_cancellation.png`).
+Figures saved to `outputs/plots/`:
+- `fig1_modality_ablation.png`
+- `fig2_federated_heterogeneity.png`
+- `fig3_privacy_utility_tradeoff.png`
+- `fig4_edge_latency_optimization.png`
+- `fig5_personalized_fedper.png`
+- `fig6_contrastive_alignment_matrix.png`
+- `fig7_secagg_noise_cancellation.png`
+- `fig8_byzantine_defense_robustness.png`
+- `fig9_conformal_coverage_calibration.png`
+- `fig10_continual_ewc_forgetting.png`
 
 ### F. Export Academic Research Paper Draft & LaTeX Manuscript
 ```bash
@@ -117,9 +135,9 @@ docker-compose up --build
 
 ---
 
-## 5. Running the Unit Test Suite (46 Tests)
+## 5. Running the Unit Test Suite (55 Tests)
 
-Run the full automated test suite across all 15 modules:
+Run the full automated test suite across all 18 modules:
 ```bash
 python -m unittest discover -s tests -v
 ```

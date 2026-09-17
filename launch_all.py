@@ -11,14 +11,14 @@ import subprocess
 
 def show_menu():
     print("\n==================================================================")
-    print("  PRIVACY-PRESERVING MULTIMODAL MENTAL HEALTH AI PLATFORM")
+    print("  PRIVACY-PRESERVING MULTIMODAL MENTAL HEALTH AI PLATFORM (PHASE 7)")
     print("==================================================================")
-    print("  [1] Launch Interactive Streamlit Web Dashboard")
+    print("  [1] Launch Interactive Streamlit Web Dashboard (5 Tabs)")
     print("  [2] Launch FastAPI REST & WebSocket Edge API Server")
     print("  [3] Run Quick Sample Terminal Predictor Demo")
-    print("  [4] Run Automated Unit Test Suite (42 Tests across 14 Modules)")
-    print("  [5] Run Automated Research Experiments (E1 to E12)")
-    print("  [6] Generate 300 DPI Paper Figures & Academic Drafts (Markdown/LaTeX)")
+    print("  [4] Run Automated Unit Test Suite (55 Tests across 18 Modules)")
+    print("  [5] Run Automated Research Experiments (E1 to E20)")
+    print("  [6] Generate 300 DPI Paper Figures (Fig 1-10) & Academic Drafts")
     print("  [7] Exit")
     print("==================================================================\n")
 

@@ -15,6 +15,7 @@ from src.fusion.cross_attention import CrossModalAttentionFusion
 from src.fusion.early import EarlyFusion
 from src.fusion.late import LateFusion
 from src.fusion.contrastive import MultimodalContrastiveHead
+from src.fusion.imputer import CrossModalImputer
 from src.text.encoder import TextNLPEncoder
 from .heads import RiskPredictionHeads
 
@@ -72,6 +73,11 @@ class MultimodalMentalHealthRiskModel(nn.Module):
         self.audio_proj = nn.Linear(audio_dim, hidden_dim)
         self.contrastive_head = MultimodalContrastiveHead(in_dim=hidden_dim, proj_dim=64, temperature=0.07)
 
+        # 6. Dynamic Cross-Modal Imputer (Phase 7 Advancement)
+        self.imputer = CrossModalImputer(
+            vision_dim=hidden_dim, audio_dim=audio_dim, text_dim=hidden_dim, hidden_dim=hidden_dim
+        )
+
     def extract_modality_embeddings(
         self, vision_seq: torch.Tensor, audio_feat: torch.Tensor, text_feat: torch.Tensor
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
@@ -98,6 +104,7 @@ class MultimodalMentalHealthRiskModel(nn.Module):
         text_feat: torch.Tensor,
         mask: Optional[torch.Tensor] = None,
         return_contrastive: bool = False,
+        impute_missing: bool = False,
     ) -> Tuple[Dict[str, torch.Tensor], torch.Tensor, torch.Tensor]:
         """
         Args:
@@ -106,11 +113,12 @@ class MultimodalMentalHealthRiskModel(nn.Module):
             text_feat: Tensor of shape [B, text_dim]
             mask: Tensor of shape [B, 3] indicating modality availability
             return_contrastive: Whether to compute contrastive loss
+            impute_missing: Whether to reconstruct missing channels via CrossModalImputer
 
         Returns:
             Tuple of:
             - Prediction dict containing 'stress_score', 'stress_logits', 'fatigue', 'attention'
-              (and optionally 'contrastive_loss' if return_contrastive is True)
+              (and optionally 'contrastive_loss' and 'imputation_metadata')
             - Modality attribution weights tensor [B, 3]
             - Confidence score tensor [B] (0.0 to 1.0)
         """
@@ -123,11 +131,24 @@ class MultimodalMentalHealthRiskModel(nn.Module):
         # Encode text
         t_emb = self.text_encoder(text_feat)
 
+        impute_meta = None
+        effective_mask = mask
+        # If dynamic imputation is enabled and mask is provided, impute missing representations
+        if impute_missing and mask is not None:
+            v_emb, audio_feat, t_emb, impute_meta = self.imputer(
+                v_emb, audio_feat, t_emb, mask=mask
+            )
+            # Modalities are now synthetically reconstructed, allowing complete cross-attention
+            effective_mask = torch.ones_like(mask)
+
         # Apply Multimodal Fusion
-        fused_emb, modality_weights = self.fusion_engine(v_emb, audio_feat, t_emb, mask=mask)
+        fused_emb, modality_weights = self.fusion_engine(v_emb, audio_feat, t_emb, mask=effective_mask)
 
         # Risk Predictions
         predictions = self.heads(fused_emb)
+
+        if impute_meta is not None:
+            predictions["imputation_metadata"] = impute_meta
 
         # Optional Contrastive Loss calculation
         if return_contrastive:
@@ -138,6 +159,9 @@ class MultimodalMentalHealthRiskModel(nn.Module):
         # Confidence Estimation based on modality presence and quality
         if mask is not None:
             confidence = torch.sum(mask, dim=1) / 3.0
+            if impute_missing and impute_meta is not None:
+                # Modality imputation preserves higher reliable operational confidence
+                confidence = torch.clamp(confidence + 0.25, 0.0, 1.0)
         else:
             confidence = torch.ones(vision_seq.size(0), device=vision_seq.device)
 

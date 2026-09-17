@@ -63,13 +63,16 @@ A modular, privacy-preserving deep learning platform that analyzes real-time vid
 - **Multimodal Audio & NLP**: Pitch/F0, energy, speech rate, MFCCs, local Speech-to-Text (STT), and RoBERTa semantic text embeddings.
 - **Multimodal Contrastive Alignment (InfoNCE)**: Self-supervised representation alignment across Vision, Audio, and Text for robustness against missing sensor channels.
 - **Temporal Modeling**: Sliding-window BiLSTM / GRU / Temporal Transformer modeling micro-expressions and stress progression.
-- **Missing-Modality Fallback**: Masking vector architecture allowing continuous inference when camera, mic, or text is unavailable.
+- **Dynamic Cross-Modal Imputation**: Generative synthesis reconstructing missing sensor modalities (e.g. occluded camera or muted microphone) via cross-modal attention instead of naive zero-masking.
 - **Personalized Federated Learning (FedPer)**: Edge client adaptation preserving subject-specific baseline heads while synchronizing global representation backbones.
 - **Cryptographic Secure Aggregation (SecAgg)**: Zero-sum pairwise secret sharing preventing server-side gradient inspection.
+- **Byzantine-Robust Defense (Multi-Krum, Trimmed Mean, Median)**: Distance-based outlier filtering and coordinate-wise trimming defending against adversarial edge poisoning attacks (sign-flip, gaussian noise).
+- **Distribution-Free Conformal Prediction**: Finite-sample statistically guaranteed confidence intervals ($P(Y \in [L, U]) \ge 1 - \alpha$) and discrete classification prediction sets without parametric assumptions.
+- **Continual Learning (EWC)**: Elastic Weight Consolidation penalizing catastrophic forgetting of personal baseline affective states during ongoing edge monitoring.
 - **Differential Privacy & Security**: PyTorch/Opacus clipping and noise injection with formal $(\epsilon, \delta)$ accounting.
 - **Multi-Level XAI**: SHAP behavioral feature importance, Grad-CAM facial heatmaps, and Modality Attribution breakdown (Vision vs Audio vs Text %).
-- **Interactive Web Dashboard**: 4-tab Streamlit UI with live webcam feed, real-time gauges, stress timeline, XAI panels, FedPer client simulator, SecAgg cryptographic verification, and Contrastive space visualizer.
-- **FastAPI Edge Server**: REST API & WebSocket endpoints for streaming edge client predictions, FedPer updates, and SecAgg verification.
+- **Interactive Web Dashboard**: 5-tab Streamlit UI with live webcam feed, real-time gauges, stress timeline, XAI panels, FedPer simulator, SecAgg verification, Contrastive visualizer, and Byzantine Defense & Conformal Uncertainty testbed.
+- **FastAPI Edge Server**: High-throughput REST API & WebSocket endpoints for streaming predictions, Byzantine-robust aggregation, conformal uncertainty bounds, and dynamic sensor imputation.
 
 ---
 
@@ -79,21 +82,21 @@ A modular, privacy-preserving deep learning platform that analyzes real-time vid
 # 1. Install dependencies
 pip install -r requirements.txt
 
-# 2. Run interactive Streamlit Dashboard
+# 2. Run interactive Streamlit Dashboard (5 Tabs)
 streamlit run dashboard/app.py
 
 # 3. Run terminal sample predictor demo
 python demo_predict_sample.py
 
-# 4. Run automated E1-E15 research experiments
+# 4. Run automated E1-E20 research experiments
 python experiments/run_experiments.py --mode fast
 
-# 5. Generate 300 DPI research figures (7 plots) & paper drafts (Markdown + LaTeX)
+# 5. Generate 300 DPI research figures (10 publication plots) & paper drafts (Markdown + LaTeX)
 python experiments/generate_paper_plots.py
 python experiments/export_paper_report.py
 python experiments/build_latex_paper.py
 
-# 6. Run full unit test suite (46 tests)
+# 6. Run full unit test suite (54 tests across 18 modules)
 python -m unittest discover -s tests
 ```
 

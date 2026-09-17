@@ -107,12 +107,34 @@ Pairwise zero-sum masks cancel at aggregation preventing server reconstruction:
 \sum_{u=1}^N y_u = \sum_{u=1}^N \left( x_u + \sum_{v > u} s_{u,v} - \sum_{v < u} s_{v,u} \right) = \sum_{u=1}^N x_u
 \end{equation}
 
+\subsection{Byzantine-Robust Multi-Krum Defense}
+To reject adversarial or corrupted client updates, client $i$ is scored by its $m - f - 2$ closest neighbors:
+\begin{equation}
+S(i) = \sum_{j \in \mathcal{N}_i} ||v_i - v_j||^2, \quad |\mathcal{N}_i| = m - f - 2
+\end{equation}
+The server averages the $k$ lowest-scoring benign candidates, discarding malicious outliers.
+
+\subsection{Distribution-Free Conformal Prediction Bounds}
+Using non-conformity residuals $R_i = |y_i - \hat{y}_i|$, the finite-sample calibrated quantile $\hat{q}$ guarantees:
+\begin{equation}
+\hat{q} = \text{Quantile}\left( \{R_i\}_{i=1}^n, \frac{\lceil (n+1)(1-\alpha) \rceil}{n} \right)
+\end{equation}
+\begin{equation}
+P(Y \in [\hat{y} - \hat{q}, \hat{y} + \hat{q}]) \ge 1 - \alpha
+\end{equation}
+
+\subsection{Elastic Weight Consolidation (EWC) for Continual Edge AI}
+To prevent catastrophic forgetting during continuous edge adaptation, parameters are regularized by the diagonal Fisher Information $F_i$:
+\begin{equation}
+\mathcal{L}_{\text{EWC}}(\theta) = \mathcal{L}_{\text{task}}(\theta) + \frac{\lambda}{2} \sum_i F_i (\theta_i - \theta_i^*)^2
+\end{equation}
+
 \section{Experimental Evaluation Matrix}
 
-The framework was benchmarked across 15 research experiment setups as shown in Table~\ref{tab:experiments}.
+The framework was systematically benchmarked across 20 research experiment setups as shown in Table~\ref{tab:experiments}.
 
 \begin{table}[htbp]
-\caption{System Empirical Performance Matrix (E1 -- E15)}
+\caption{System Empirical Performance Matrix (E1 -- E20)}
 \label{tab:experiments}
 \centering
 \begin{tabular}{llccl}

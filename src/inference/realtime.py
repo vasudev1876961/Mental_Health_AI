@@ -20,6 +20,7 @@ from src.explainability.shap_explainer import SHAPBehaviorExplainer
 from src.explainability.modality_attribution import ModalityAttributionAnalyzer
 from src.explainability.uncertainty import UncertaintyEstimator
 from src.explainability.gradcam import GradCAMExplainer
+from src.uncertainty.conformal import ConformalRiskPredictor
 from .buffer import SlidingWindowBuffer
 
 
@@ -41,6 +42,7 @@ class RealtimeInferenceEngine:
         self.shap_explainer = SHAPBehaviorExplainer()
         self.modality_attribution = ModalityAttributionAnalyzer()
         self.uncertainty_estimator = UncertaintyEstimator()
+        self.conformal_predictor = ConformalRiskPredictor(alpha=0.10)
         self.gradcam_explainer = GradCAMExplainer(self.model)
 
         self.smoothed_stress = 30.0
@@ -50,6 +52,8 @@ class RealtimeInferenceEngine:
         image: np.ndarray,
         audio_signal: Optional[np.ndarray] = None,
         transcript_text: Optional[str] = None,
+        impute_missing: bool = True,
+        conformal_alpha: Optional[float] = None,
     ) -> Dict:
         """Processes a single video frame and produces real-time risk assessment payload.
 
@@ -57,9 +61,11 @@ class RealtimeInferenceEngine:
             image: BGR/RGB image frame array shape [H, W, 3]
             audio_signal: Optional audio waveform numpy array shape [N]
             transcript_text: Optional spoken text string
+            impute_missing: Whether to dynamically reconstruct missing modalities
+            conformal_alpha: Significance level for conformal interval (e.g. 0.10 for 90%)
 
         Returns:
-            Dict containing vision overlays, stress predictions, SHAP ranks, XAI, and confidence metrics.
+            Dict containing vision overlays, stress predictions, conformal bounds, SHAP ranks, XAI, and confidence metrics.
         """
         # 1. Vision Detection & Landmarks
         bbox = self.detector.detect(image)
@@ -100,10 +106,14 @@ class RealtimeInferenceEngine:
         a_feat_tensor = torch.tensor(a_feat, dtype=torch.float32).unsqueeze(0)
         t_feat_tensor = torch.tensor(t_feat, dtype=torch.float32).unsqueeze(0)
 
-        # 6. Evaluate Deep Learning Model
+        # 6. Evaluate Deep Learning Model with dynamic imputation
         with torch.no_grad():
             preds, modality_weights, confidence = self.model(
-                v_seq_tensor, a_feat_tensor, t_feat_tensor, mask=mask_tensor
+                v_seq_tensor,
+                a_feat_tensor,
+                t_feat_tensor,
+                mask=mask_tensor,
+                impute_missing=impute_missing,
             )
 
         raw_stress = float(preds["stress_score"].item())
@@ -121,14 +131,19 @@ class RealtimeInferenceEngine:
         fatigue_score = float(np.round(preds["fatigue"].item(), 2))
         attention_score = float(np.round(preds["attention"].item(), 2))
 
-        # 7. XAI Attributions
+        # 7. Conformal Prediction Uncertainty Bounds
+        conformal_bounds = self.conformal_predictor.predict_interval(
+            stress_score, alpha_override=conformal_alpha
+        )
+
+        # 8. XAI Attributions
         shap_ranks = self.shap_explainer.explain_instance(vision_feat, stress_score=stress_score)
         modality_pcts = self.modality_attribution.compute_attribution_percentage(modality_weights)
 
-        # 8. Grad-CAM heatmap
+        # 9. Grad-CAM heatmap
         heatmap_frame = self.gradcam_explainer.generate_heatmap(face_crop) if face_crop is not None else image
 
-        # 9. Confidence & Quality Assessment
+        # 10. Confidence & Quality Assessment
         quality_assessment = self.uncertainty_estimator.evaluate_quality(
             face_confidence=bbox["confidence"] if bbox else 0.0,
             audio_rms=float(a_feat[1]) if len(a_feat) > 1 else 0.0,
@@ -142,8 +157,10 @@ class RealtimeInferenceEngine:
             "heatmap_frame": heatmap_frame,
             "stress_score": stress_score,
             "stress_level": stress_level,
+            "conformal_bounds": conformal_bounds,
             "fatigue_score": fatigue_score,
             "attention_score": attention_score,
+            "imputation_metadata": preds.get("imputation_metadata", {}),
             "primary_emotion": self.behavior_engine.compute_features(landmarks, emotion_probs=emotion_probs)[11],
             "emotion_probs": emotion_probs.tolist() if emotion_probs is not None else [],
             "shap_ranks": shap_ranks[:6], # Top 6 features

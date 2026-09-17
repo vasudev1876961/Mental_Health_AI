@@ -100,11 +100,31 @@ To prevent server-side gradient reconstruction, client $u$ injects zero-sum pair
 
 $$y_u = x_u + \\sum_{v > u} s_{u,v} - \\sum_{v < u} s_{v,u} \\implies \\sum_{u=1}^N y_u = \\sum_{u=1}^N x_u$$
 
+### 2.7 Byzantine-Robust Multi-Krum Defense
+To defend federated aggregation against malicious or faulty client poisonings, candidate updates are scored by their $m - f - 2$ closest Euclidean neighbors:
+
+$$S(i) = \\sum_{j \\in \\mathcal{N}_i} ||v_i - v_j||^2, \\quad |\\mathcal{N}_i| = m - f - 2$$
+
+The server selects and averages the $k$ lowest-scoring updates, filtering out malicious outliers.
+
+### 2.8 Distribution-Free Conformal Prediction Bounds
+Using calibration residuals $R_i = |y_i - \\hat{y}_i|$, the finite-sample calibrated quantile $\\hat{q}$ guarantees coverage without parametric assumptions:
+
+$$\\hat{q} = \\text{Quantile}\\left( \\{R_i\\}_{i=1}^n, \\frac{\\lceil (n+1)(1-\\alpha) \\rceil}{n} \\right) \\implies P(Y \\in [\\hat{y} - \\hat{q}, \\hat{y} + \\hat{q}]) \\ge 1 - \\alpha$$
+
+### 2.9 Elastic Weight Consolidation (EWC) Continual Learning
+To prevent catastrophic forgetting of personal baseline signatures during ongoing edge adaptation, parameter updates are regularized by the diagonal empirical Fisher Information matrix $F_i$:
+
+$$\\mathcal{L}_{\\text{EWC}}(\\theta) = \\mathcal{L}_{\\text{task}}(\\theta) + \\frac{\\lambda}{2} \\sum_i F_i (\\theta_i - \\theta_i^*)^2$$
+
+### 2.10 Dynamic Cross-Modal Generative Imputation
+Reconstructs missing sensor modalities (e.g., occluded camera or muted microphone) using attention-based cross-modal generative synthesis rather than zero-masking.
+
 ---
 
-## 3. Experimental Evaluation Matrix (E1 – E15)
+## 3. Experimental Evaluation Matrix (E1 – E20)
 
-The system was systematically benchmarked across 15 research experiment setups:
+The system was systematically benchmarked across 20 research experiment setups:
 
 """ + metrics_table_md + """
 
