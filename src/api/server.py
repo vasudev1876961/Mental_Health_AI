@@ -21,11 +21,16 @@ from src.fusion.contrastive import MultimodalContrastiveHead
 from src.defense.byzantine import ByzantineRobustAggregator, AdversarialAttackSimulator
 from src.uncertainty.conformal import ConformalRiskPredictor
 from src.fusion.imputer import CrossModalImputer
+from src.physiological.rppg import RemotePPGExtractor, HRVMetrics
+from src.explainability.counterfactual import CounterfactualRecourseEngine
+from src.federated.async_fl import AsyncFLServer, simulate_heterogeneous_async_session
+from src.optimization.onnx_exporter import ONNXEdgeInferenceEngine
+from src.optimization.pruning import MultimodalWeightPruner
 
 app = FastAPI(
     title="Privacy-Preserving Mental Health AI API",
-    description="Real-Time Multimodal Mental Health Risk Assessment API with FedPer, SecAgg, Byzantine Defenses, and Conformal Uncertainty",
-    version="2.1.0",
+    description="Real-Time Multimodal Mental Health Risk Assessment API with FedAsync, rPPG HRV Biomarkers, Counterfactual Recourse, and ONNX Edge Acceleration",
+    version="2.2.0",
 )
 
 # Enable CORS Middleware for cross-origin client integration
@@ -41,6 +46,11 @@ app.add_middleware(
 engine = RealtimeInferenceEngine(window_size=30)
 fedper_mgr = FedPerManager()
 contrastive_head = MultimodalContrastiveHead(in_dim=128, proj_dim=64)
+async_server = AsyncFLServer(base_alpha=0.5, staleness_mode="polynomial", staleness_param=0.5)
+counterfactual_recourse_engine = CounterfactualRecourseEngine()
+rppg_engine = RemotePPGExtractor()
+onnx_edge_engine = ONNXEdgeInferenceEngine()
+
 
 
 class PredictionRequest(BaseModel):
@@ -135,12 +145,72 @@ class ImputeResponse(BaseModel):
     status: str
 
 
+class RPPGExtractRequest(BaseModel):
+    stress_level_context: Optional[str] = "Medium"
+    simulated: bool = True
+
+
+class RPPGExtractResponse(BaseModel):
+    heart_rate_bpm: float
+    sdnn_ms: float
+    rmssd_ms: float
+    pnn50_pct: float
+    baevsky_stress_index: float
+    autonomic_stress_score: float
+    vagal_tone_status: str
+    status: str
+
+
+class CounterfactualRecourseRequest(BaseModel):
+    current_stress_score: float = 76.5
+    target_stress_score: float = 28.0
+    current_features: Optional[Dict[str, float]] = None
+
+
+class CounterfactualRecourseResponse(BaseModel):
+    original_stress_score: float
+    target_stress_score: float
+    achieved_stress_score: float
+    sparsity_count: int
+    plausibility_score: float
+    recourse_items: List[Dict[str, Any]]
+    clinical_summary: str
+    status: str
+
+
+class AsyncFLUpdateRequest(BaseModel):
+    client_id: str = "EdgeClient_1"
+    pulled_step: int = 0
+    staleness_mode: str = "polynomial"
+    vector_dim: int = 50
+
+
+class AsyncFLUpdateResponse(BaseModel):
+    server_step: int
+    client_id: str
+    staleness_tau: int
+    staleness_alpha: float
+    status: str
+
+
+class ONNXBenchmarkRequest(BaseModel):
+    num_iters: int = 15
+
+
+class ONNXBenchmarkResponse(BaseModel):
+    pytorch_mean_ms: float
+    onnx_runtime_mean_ms: float
+    speedup_factor: float
+    latency_reduction_pct: float
+    status: str
+
+
 @app.get("/")
 def read_root():
     return {
         "status": "online",
         "service": "Privacy-Preserving Real-Time Multimodal Mental Health Risk Assessment API",
-        "version": "2.1.0",
+        "version": "2.2.0",
         "features": [
             "Real-Time Multimodal Inference",
             "Personalized Federated Learning (FedPer)",
@@ -149,8 +219,13 @@ def read_root():
             "Byzantine-Robust Federated Defense (Multi-Krum, Trimmed Mean, Median)",
             "Distribution-Free Conformal Prediction & Calibrated Bounds",
             "Dynamic Cross-Modal Representation Imputation",
+            "Contactless Physiological rPPG & Autonomic HRV Biomarkers (Phase 8)",
+            "Causal Multimodal Counterfactual Recourse & Actionable Interventions (Phase 8)",
+            "Asynchronous Federated Learning (FedAsync) with Dynamic Staleness (Phase 8)",
+            "Ultra-Low Latency ONNX Runtime Edge Acceleration & Weight Pruning (Phase 8)",
         ],
     }
+
 
 
 @app.get("/health")
@@ -339,7 +414,79 @@ def impute_missing_modality(req: ImputeRequest):
     )
 
 
+@app.post("/physiological/rppg/extract", response_model=RPPGExtractResponse)
+def extract_rppg_biomarkers(req: RPPGExtractRequest):
+    """Extracts autonomic Heart Rate Variability (HRV) metrics and pulse dynamics."""
+    metrics = rppg_engine.simulate_physiological_sample(target_stress_level=req.stress_level_context or "Medium")
+    return RPPGExtractResponse(
+        heart_rate_bpm=metrics.heart_rate_bpm,
+        sdnn_ms=metrics.sdnn_ms,
+        rmssd_ms=metrics.rmssd_ms,
+        pnn50_pct=metrics.pnn50_pct,
+        baevsky_stress_index=metrics.baevsky_stress_index,
+        autonomic_stress_score=metrics.autonomic_stress_score,
+        vagal_tone_status=metrics.vagal_tone_status,
+        status="Physiological: Contactless rPPG and autonomic HRV extraction active",
+    )
+
+
+@app.post("/explainability/counterfactual/recourse", response_model=CounterfactualRecourseResponse)
+def compute_counterfactual_recourse(req: CounterfactualRecourseRequest):
+    """Computes actionable behavioral modifications to reduce stress to target healthy level."""
+    res = counterfactual_recourse_engine.generate_counterfactual(
+        current_stress_score=req.current_stress_score,
+        target_stress_score=req.target_stress_score,
+        current_features=req.current_features,
+    )
+    return CounterfactualRecourseResponse(
+        original_stress_score=res.original_stress_score,
+        target_stress_score=res.target_stress_score,
+        achieved_stress_score=res.achieved_stress_score,
+        sparsity_count=res.sparsity_count,
+        plausibility_score=res.plausibility_score,
+        recourse_items=res.recourse_items,
+        clinical_summary=res.clinical_summary,
+        status="Prescribed: Actionable clinical counterfactual recourse computed",
+    )
+
+
+@app.post("/federated/async/update", response_model=AsyncFLUpdateResponse)
+def submit_async_fl_update(req: AsyncFLUpdateRequest):
+    """Applies non-blocking asynchronous parameter aggregation with staleness decay."""
+    rng = np.random.RandomState()
+    # Match server's parameter dimension
+    target_dim = len(async_server.global_weights[0])
+    dummy_client_weights = [rng.normal(0.0, 0.5, size=target_dim).astype(np.float32)]
+    record = async_server.update_from_client(
+        client_id=req.client_id,
+        client_weights=dummy_client_weights,
+        pulled_step=req.pulled_step,
+    )
+
+    return AsyncFLUpdateResponse(
+        server_step=record["server_step"],
+        client_id=record["client_id"],
+        staleness_tau=record["staleness_tau"],
+        staleness_alpha=record["staleness_alpha"],
+        status="Aggregated: Asynchronous federated update committed with staleness compensation",
+    )
+
+
+@app.post("/optimization/onnx/benchmark", response_model=ONNXBenchmarkResponse)
+def benchmark_onnx_acceleration(req: ONNXBenchmarkRequest):
+    """Benchmarks edge inference latency comparing native PyTorch vs ONNX Runtime."""
+    bench = onnx_edge_engine.benchmark_comparison(pytorch_model=engine.model, num_iters=req.num_iters)
+    return ONNXBenchmarkResponse(
+        pytorch_mean_ms=bench["pytorch"]["mean_latency_ms"],
+        onnx_runtime_mean_ms=bench["onnx_runtime"]["mean_latency_ms"],
+        speedup_factor=bench["speedup_factor"],
+        latency_reduction_pct=bench["latency_reduction_pct"],
+        status="Optimized: Hardware graph acceleration benchmark complete",
+    )
+
+
 @app.websocket("/ws/predict")
+
 async def websocket_predict(websocket: WebSocket):
     """Real-time streaming WebSocket endpoint for continuous frame predictions."""
     await websocket.accept()

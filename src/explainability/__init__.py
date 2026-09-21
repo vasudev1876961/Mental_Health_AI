@@ -6,10 +6,14 @@ from .shap_explainer import SHAPBehaviorExplainer
 from .gradcam import GradCAMExplainer
 from .modality_attribution import ModalityAttributionAnalyzer
 from .uncertainty import UncertaintyEstimator
+from .counterfactual import CounterfactualRecourseEngine, CounterfactualResult
 
 __all__ = [
     "SHAPBehaviorExplainer",
     "GradCAMExplainer",
     "ModalityAttributionAnalyzer",
     "UncertaintyEstimator",
+    "CounterfactualRecourseEngine",
+    "CounterfactualResult",
 ]
+

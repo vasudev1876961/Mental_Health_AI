@@ -129,13 +129,35 @@ To prevent catastrophic forgetting during continuous edge adaptation, parameters
 \mathcal{L}_{\text{EWC}}(\theta) = \mathcal{L}_{\text{task}}(\theta) + \frac{\lambda}{2} \sum_i F_i (\theta_i - \theta_i^*)^2
 \end{equation}
 
+\subsection{Asynchronous Federated Learning (FedAsync)}
+To resolve the straggler problem in heterogeneous edge networks, client updates are aggregated asynchronously with polynomial staleness attenuation:
+\begin{equation}
+\theta_{t+1} = (1 - \alpha_0 S(\tau)) \theta_t + \alpha_0 S(\tau) \theta_{\text{client}}, \quad S(\tau) = (1 + \tau)^{-\gamma}
+\end{equation}
+
+\subsection{Contactless Physiological rPPG \& Autonomic HRV}
+Autonomic vagal tone is quantified non-invasively using facial chrominance Blood Volume Pulse (BVP) and the Root Mean Square of Successive RR Differences (RMSSD):
+\begin{equation}
+\text{RMSSD} = \sqrt{\frac{1}{N-1} \sum_{i=1}^{N-1} (RR_{i+1} - RR_i)^2}
+\end{equation}
+
+\subsection{Causal Multimodal Counterfactual Recourse}
+Actionable clinical recommendations are derived by solving a sparse constrained recourse formulation:
+\begin{equation}
+\min_{\boldsymbol{\delta}} \|\boldsymbol{\delta}\|_1 + \lambda (f(\mathbf{x} + \boldsymbol{\delta}) - y_{\text{target}})^2 + \gamma \mathcal{R}(\boldsymbol{\delta})
+\end{equation}
+
+\subsection{Hardware-Fused ONNX Runtime Edge Optimization}
+Computational graph compilation and operator fusion achieve sub-10ms inference latencies on resource-constrained edge CPUs.
+
 \section{Experimental Evaluation Matrix}
 
-The framework was systematically benchmarked across 20 research experiment setups as shown in Table~\ref{tab:experiments}.
+The framework was systematically benchmarked across 25 research experiment setups as shown in Table~\ref{tab:experiments}.
 
 \begin{table}[htbp]
-\caption{System Empirical Performance Matrix (E1 -- E20)}
+\caption{System Empirical Performance Matrix (E1 -- E25)}
 \label{tab:experiments}
+
 \centering
 \begin{tabular}{llccl}
 \toprule

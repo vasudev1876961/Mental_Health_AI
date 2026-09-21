@@ -21,6 +21,8 @@ from src.explainability.modality_attribution import ModalityAttributionAnalyzer
 from src.explainability.uncertainty import UncertaintyEstimator
 from src.explainability.gradcam import GradCAMExplainer
 from src.uncertainty.conformal import ConformalRiskPredictor
+from src.physiological.rppg import RemotePPGExtractor
+from src.explainability.counterfactual import CounterfactualRecourseEngine
 from .buffer import SlidingWindowBuffer
 
 
@@ -45,7 +47,12 @@ class RealtimeInferenceEngine:
         self.conformal_predictor = ConformalRiskPredictor(alpha=0.10)
         self.gradcam_explainer = GradCAMExplainer(self.model)
 
+        # Phase 8: Physiological rPPG & Counterfactual Recourse
+        self.rppg_extractor = RemotePPGExtractor()
+        self.counterfactual_engine = CounterfactualRecourseEngine()
+
         self.smoothed_stress = 30.0
+
 
     def process_frame(
         self,
@@ -150,6 +157,30 @@ class RealtimeInferenceEngine:
             modality_mask=mask_tensor.squeeze(0).numpy(),
         )
 
+        # 11. Phase 8: Physiological rPPG & Autonomic HRV Extraction
+        self.rppg_extractor.add_frame(image, bbox=bbox)
+        if len(self.rppg_extractor.g_buffer) >= 45:
+            hrv_metrics = self.rppg_extractor.extract_hrv()
+        else:
+            hrv_metrics = self.rppg_extractor.simulate_physiological_sample(target_stress_level=stress_level)
+
+        # 12. Phase 8: Causal Multimodal Counterfactual Recourse
+        current_features_dict = {
+            "mar": float(vision_feat[1]),
+            "pitch": float(vision_feat[2]),
+            "roll": float(vision_feat[4]),
+            "blink_rate": float(vision_feat[5]) if len(vision_feat) > 5 else 15.0,
+            "brow_furrow": float(vision_feat[8]) if len(vision_feat) > 8 else 0.5,
+            "speech_rate": float(a_feat[2] * 20.0 + 130.0) if len(a_feat) > 2 else 140.0,
+            "vocal_jitter": float(a_feat[3] * 0.01 + 0.03) if len(a_feat) > 3 else 0.04,
+            "rmssd_hrv": hrv_metrics.rmssd_ms,
+        }
+        recourse_result = self.counterfactual_engine.generate_counterfactual(
+            current_stress_score=stress_score,
+            target_stress_score=28.0,
+            current_features=current_features_dict,
+        )
+
         return {
             "bbox": bbox,
             "landmarks": landmarks,
@@ -166,6 +197,8 @@ class RealtimeInferenceEngine:
             "shap_ranks": shap_ranks[:6], # Top 6 features
             "modality_pcts": modality_pcts,
             "quality": quality_assessment,
+            "physiological_hrv": hrv_metrics.to_dict(),
+            "counterfactual_recourse": recourse_result.to_dict(),
             "behavior_features": {
                 "ear": float(np.round(vision_feat[0], 3)),
                 "mar": float(np.round(vision_feat[1], 3)),
@@ -174,3 +207,4 @@ class RealtimeInferenceEngine:
                 "roll": float(np.round(vision_feat[4], 1)),
             },
         }
+

@@ -4,5 +4,8 @@ Optimization Module: PyTorch Dynamic Quantization and Latency/Memory Benchmarkin
 
 from .quantize import DynamicQuantizer
 from .benchmark import LatencyBenchmark
+from .onnx_exporter import ONNXEdgeInferenceEngine
+from .pruning import MultimodalWeightPruner
 
-__all__ = ["DynamicQuantizer", "LatencyBenchmark"]
+__all__ = ["DynamicQuantizer", "LatencyBenchmark", "ONNXEdgeInferenceEngine", "MultimodalWeightPruner"]
+
