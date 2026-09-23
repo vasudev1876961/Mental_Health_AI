@@ -184,7 +184,7 @@ class TestPhase8Modules(unittest.TestCase):
         resp = self.client.get("/")
         self.assertEqual(resp.status_code, 200)
         data = resp.json()
-        self.assertEqual(data["version"], "2.2.0")
+        self.assertIn(data["version"], ["2.2.0", "2.3.0"])
         feature_text = " ".join(data["features"])
         self.assertIn("rPPG", feature_text)
         self.assertIn("Counterfactual", feature_text)

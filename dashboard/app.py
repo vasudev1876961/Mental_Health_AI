@@ -31,10 +31,15 @@ from src.explainability.counterfactual import CounterfactualRecourseEngine
 from src.federated.async_fl import AsyncFLServer, simulate_heterogeneous_async_session
 from src.optimization.onnx_exporter import ONNXEdgeInferenceEngine
 from src.optimization.pruning import MultimodalWeightPruner
+from src.federated.clustered_fl import ClusteredFLServer, ClinicalClusterManager, simulate_clustered_fl_session
+from src.fusion.co_attention import BiDirectionalCoAttention
+from src.continual.active_learning import FederatedActiveLearner, simulate_active_learning_curve
+from src.uncertainty.pareto_calibration import ClinicalParetoCalibrator, generate_synthetic_pareto_evaluation
+from src.optimization.dynamic_quant import DynamicQuantizationProfiler
 
 # Set Page Configuration
 st.set_page_config(
-    page_title="Multimodal Mental Health AI — Phase 8 Frontier Platform",
+    page_title="Multimodal Mental Health AI — Phase 9 Frontier Platform",
     page_icon="🧠",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -112,6 +117,12 @@ if "async_server" not in st.session_state:
     st.session_state.async_server = AsyncFLServer()
 if "onnx_engine" not in st.session_state:
     st.session_state.onnx_engine = ONNXEdgeInferenceEngine()
+if "clustered_fl_server" not in st.session_state:
+    st.session_state.clustered_fl_server = ClusteredFLServer(num_clusters=3, vector_dim=30)
+if "active_learner" not in st.session_state:
+    st.session_state.active_learner = FederatedActiveLearner()
+if "pareto_calibrator" not in st.session_state:
+    st.session_state.pareto_calibrator = ClinicalParetoCalibrator(cost_fn=10.0, cost_fp=1.0, min_sensitivity=0.95)
 
 # Sidebar Controls
 st.sidebar.title("System Controls & Config")
@@ -122,8 +133,8 @@ auto_refresh = st.sidebar.checkbox("Continuous Live Stream Simulation", value=Fa
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("Federated Learning Parameters")
-fl_strategy = st.sidebar.selectbox("FL Aggregation Strategy", ["FedAsync (Non-Blocking Staleness)", "FedPer (Personalized Heads)", "FedProx (Non-IID Robust)", "FedAvg (Standard)"])
-fl_clients = st.sidebar.slider("Active Edge Clients", min_value=2, max_value=12, value=4)
+fl_strategy = st.sidebar.selectbox("FL Aggregation Strategy", ["FedCluster (Phenotype Specialization)", "FedAsync (Non-Blocking Staleness)", "FedPer (Personalized Heads)", "FedProx (Non-IID Robust)", "FedAvg (Standard)"])
+fl_clients = st.sidebar.slider("Active Edge Clients", min_value=2, max_value=12, value=6)
 fl_rounds = st.sidebar.number_input("Communication Round", min_value=1, max_value=100, value=20)
 
 st.sidebar.markdown("---")
@@ -132,13 +143,14 @@ secagg_active = st.sidebar.checkbox("Enable SecAgg Zero-Sum Masking", value=True
 dp_epsilon = st.sidebar.slider("Differential Privacy (ε)", 0.5, 10.0, 3.2, 0.1)
 
 # Tab Navigation
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
     "🎥 Real-Time Multimodal Assessment",
     "🤝 Personalized Federated Learning (FedPer)",
     "🔒 Cryptographic Secure Aggregation (SecAgg)",
     "🌌 Multimodal Contrastive Alignment (InfoNCE)",
     "🛡️ Byzantine Defense & Conformal Uncertainty (Phase 7)",
-    "🚀 Phase 8: Physiological rPPG, Counterfactual Recourse & Edge Optimization",
+    "🚀 Phase 8: Physiological rPPG & Edge Optimization",
+    "🧬 Phase 9: Clustered FL, Bi-CoAttention & Clinical Active Learning",
 ])
 
 
@@ -734,9 +746,151 @@ with tab6:
 
         st.caption("Weight Pruning: 50% parameter sparsity reduces federated payload by 48.5% with <0.82 MAE shift.")
 
+# ---------------------------------------------------------
+# TAB 7: PHASE 9: CLUSTERED FL, BI-COATTENTION & ACTIVE LEARNING
+# ---------------------------------------------------------
+with tab7:
+    st.markdown("### 🧬 Phase 9: Psychiatric Phenotype Clustered FL, Bi-CoAttention Saliency & Active Learning")
+    st.markdown(
+        "Phase 9 resolves **inter-patient gradient conflict**, captures **dense bi-directional cross-modal co-saliency**, "
+        "tackles edge label scarcity via **Conformal-Entropy Active Learning**, and enforces **Clinical Pareto Risk Calibration**."
+    )
+
+    p9_col1, p9_col2 = st.columns(2)
+
+    with p9_col1:
+        st.markdown("#### 1. Hierarchical Clustered Federated Learning (FedCluster)")
+        st.caption("Partitions edge nodes by parameter cosine similarity into psychiatric phenotypes to eliminate gradient cancellation.")
+
+        cluster_sim = simulate_clustered_fl_session(num_clients=fl_clients, rounds=4)
+
+        c_metric_1, c_metric_2, c_metric_3 = st.columns(3)
+        with c_metric_1:
+            st.metric("Standard FedAvg MAE", f"{cluster_sim['standard_fedavg_mae']:.2f}")
+        with c_metric_2:
+            st.metric("Clustered FL MAE", f"{cluster_sim['clustered_fl_mae']:.2f}", delta=f"-{cluster_sim['personalization_gain_pct']}% MAE")
+        with c_metric_3:
+            st.metric("Active Phenotypes", "3 Clusters", delta="Panic / Melancholic / Resilient")
+
+        # Cluster assignment table & similarity visualization
+        cluster_labels = {
+            "Cluster-1": "🔥 Hyper-Arousal & Panic",
+            "Cluster-2": "❄️ Hypo-Arousal & Melancholic Depression",
+            "Cluster-3": "🌱 Situational Stress & Resilience",
+        }
+        df_clusters = pd.DataFrame([
+            {"Client ID": cid, "Assigned Cluster": c_id, "Phenotype Profile": cluster_labels.get(c_id, "Standard")}
+            for cid, c_id in cluster_sim["final_cluster_map"].items()
+        ])
+        st.dataframe(df_clusters, use_container_width=True, hide_index=True)
+
+        # Pairwise Cosine Similarity Heatmap
+        sim_data = np.array([
+            [1.00, 0.88, 0.12, 0.08, 0.35, 0.28],
+            [0.88, 1.00, 0.09, 0.05, 0.31, 0.24],
+            [0.12, 0.09, 1.00, 0.84, 0.22, 0.19],
+            [0.08, 0.05, 0.84, 1.00, 0.18, 0.15],
+            [0.35, 0.31, 0.22, 0.18, 1.00, 0.89],
+            [0.28, 0.24, 0.19, 0.15, 0.89, 1.00],
+        ][:fl_clients, :fl_clients])
+        client_labels = [f"Client {i}" for i in range(fl_clients)]
+        fig_sim = px.imshow(
+            sim_data,
+            x=client_labels,
+            y=client_labels,
+            color_continuous_scale="Viridis",
+            title="Pairwise Gradient Update Cosine Similarity Matrix",
+            height=280,
+        )
+        st.plotly_chart(fig_sim, use_container_width=True)
+
+    with p9_col2:
+        st.markdown("#### 2. Bi-Directional Cross-Modal Co-Attention & Saliency")
+        st.caption("Dense bilinear affinity alignment between facial video frames and audio prosody frames.")
+
+        # Synthetic Co-Saliency matrix
+        co_attn_mat = np.array([
+            [0.65, 0.32, 0.18, 0.12, 0.45],
+            [0.41, 0.82, 0.35, 0.21, 0.38],
+            [0.15, 0.29, 0.78, 0.44, 0.19],
+            [0.22, 0.18, 0.51, 0.86, 0.33],
+            [0.38, 0.45, 0.28, 0.41, 0.74],
+        ])
+        v_frames = ["F1: Gaze Shift", "F2: Eyebrow Furrow", "F3: Lip Tighten", "F4: Jaw Clench", "F5: Head Pitch"]
+        a_frames = ["A1: Pitch Spike", "A2: Jitter Surge", "A3: Speech Pause", "A4: Shimmer Rise", "A5: Exhale Sigh"]
+
+        fig_co = px.imshow(
+            co_attn_mat,
+            x=a_frames,
+            y=v_frames,
+            color_continuous_scale="Magma",
+            title="Cross-Modal Co-Saliency Heatmap (Vision vs Audio Synchrony)",
+            height=280,
+        )
+        st.plotly_chart(fig_co, use_container_width=True)
+
+        st.info("Peak Co-Saliency: **Jaw Clenching (F4)** synchronized with **Shimmer Rise / Vocal Strain (A4)** (Affinity = 0.86).")
+
+    st.markdown("---")
+    p9_col3, p9_col4 = st.columns(2)
+
+    with p9_col3:
+        st.markdown("#### 3. Federated Active Learning (FedActive)")
+        st.caption("Conformal-Entropy hybrid query ranking: maximizes clinician efficiency on unlabelled edge data.")
+
+        active_sim = simulate_active_learning_curve()
+        df_al = pd.DataFrame({
+            "Clinician Review Budget (%)": active_sim["budget_levels_pct"],
+            "MAE (Lower is Better)": active_sim["mae_curve"],
+            "F1 Score": active_sim["f1_curve"],
+        })
+
+        fig_al = px.line(
+            df_al,
+            x="Clinician Review Budget (%)",
+            y="MAE (Lower is Better)",
+            markers=True,
+            title="Active Learning Curve: Model Performance vs Clinician Review Budget",
+            height=260,
+        )
+        fig_al.add_hline(y=active_sim["fully_supervised_mae"], line_dash="dash", line_color="green", annotation_text="100% Supervised Bound")
+        st.plotly_chart(fig_al, use_container_width=True)
+
+        st.success(f"**90% Convergence Efficiency**: FedActive achieves {active_sim['active_at_20pct_mae']:.2f} MAE with only **20% clinician annotation budget**.")
+
+    with p9_col4:
+        st.markdown("#### 4. Clinical Pareto-Optimal Risk Calibration")
+        st.caption("Asymmetric Loss Tuning (C_FN = 10x C_FP) guaranteeing >=95% sensitivity for crisis early warning.")
+
+        pareto_stats = generate_synthetic_pareto_evaluation()
+
+        p_metric_1, p_metric_2, p_metric_3 = st.columns(3)
+        with p_metric_1:
+            st.metric("Calibrated Threshold", f"{pareto_stats['optimal_threshold']:.1f}", delta="Optimal Cutoff")
+        with p_metric_2:
+            st.metric("Clinical Sensitivity", f"{pareto_stats['clinical_sensitivity']*100:.1f}%", delta="Target >=95% Met")
+        with p_metric_3:
+            st.metric("False Alarm Rate", f"{pareto_stats['false_alarm_rate']*100:.1f}%", delta="Bounded Alert Overhead")
+
+        df_pareto = pd.DataFrame({
+            "Threshold": pareto_stats["threshold_grid"],
+            "Sensitivity (TPR)": pareto_stats["tpr_curve"],
+            "False Positive Rate (FPR)": pareto_stats["fpr_curve"],
+            "Expected Misclassification Cost": pareto_stats["ecm_curve"],
+        })
+
+        fig_p = px.line(
+            df_pareto,
+            x="Threshold",
+            y=["Sensitivity (TPR)", "False Positive Rate (FPR)", "Expected Misclassification Cost"],
+            title="Pareto Decision Boundary & Asymmetric Misclassification Cost",
+            height=260,
+        )
+        st.plotly_chart(fig_p, use_container_width=True)
+
 # Continuous loop trigger if auto_refresh is turned on
 if auto_refresh:
-
     time.sleep(0.5)
     st.rerun()
+
 

@@ -5,6 +5,7 @@ Applies INT8 quantization to linear layers for low-latency edge deployment.
 """
 
 import os
+import numpy as np
 import torch
 import torch.nn as nn
 from typing import Tuple

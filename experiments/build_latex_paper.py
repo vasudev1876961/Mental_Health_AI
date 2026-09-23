@@ -150,12 +150,33 @@ Actionable clinical recommendations are derived by solving a sparse constrained 
 \subsection{Hardware-Fused ONNX Runtime Edge Optimization}
 Computational graph compilation and operator fusion achieve sub-10ms inference latencies on resource-constrained edge CPUs.
 
+\subsection{Hierarchical Clustered Federated Learning (FedCluster)}
+To address client gradient cancellation across diverging psychiatric phenotypes, edge updates are clustered via cosine similarity:
+\begin{equation}
+\text{Sim}(\Delta w_i, \Delta w_j) = \frac{\langle \Delta w_i, \Delta w_j \rangle}{\|\Delta w_i\|_2 \|\Delta w_j\|_2}
+\end{equation}
+
+\subsection{Bi-Directional Cross-Modal Co-Attention}
+Computes dense bilinear cross-modal affinity between facial micro-gestures and speech prosody:
+\begin{equation}
+H_v = \text{softmax}(A) A_{\text{proj}}, \quad H_a = \text{softmax}(A^T) V_{\text{proj}}, \quad g = \sigma(W_g [H_v; H_a; T_{\text{proj}}] + b_g)
+\end{equation}
+
+\subsection{Federated Semi-Supervised Active Learning (FedActive)}
+Combines predictive entropy and conformal margin uncertainty to query informative unlabelled edge streams:
+\begin{equation}
+\mathcal{U}(x) = \alpha \mathcal{H}(p) + \beta \frac{U(x) - L(x)}{100} + \gamma (1 - \text{Quality})
+\end{equation}
+
+\subsection{Clinical Pareto Risk Calibration}
+Calibrates asymmetric clinical thresholds under severe false negative penalty ($C_{\text{FN}} = 10 \cdot C_{\text{FP}}$) on the ROC/PR Pareto frontier.
+
 \section{Experimental Evaluation Matrix}
 
-The framework was systematically benchmarked across 25 research experiment setups as shown in Table~\ref{tab:experiments}.
+The framework was systematically benchmarked across 30 research experiment setups as shown in Table~\ref{tab:experiments}.
 
 \begin{table}[htbp]
-\caption{System Empirical Performance Matrix (E1 -- E25)}
+\caption{System Empirical Performance Matrix (E1 -- E30)}
 \label{tab:experiments}
 
 \centering
@@ -166,6 +187,7 @@ The framework was systematically benchmarked across 25 research experiment setup
 """ + latex_table_rows + r"""\bottomrule
 \end{tabular}
 \end{table}
+
 
 \section{Ethical & Medical Disclaimer}
 Outputs produced by this framework are AI-generated screening/risk indicators intended to assist clinical research and early screening, NOT definitive diagnostic medical assessments.

@@ -144,11 +144,33 @@ Prescribes targeted interventions (e.g., jaw relaxation, cervical spine realignm
 ### 2.14 Ultra-Low Latency ONNX Runtime Edge Optimization & Magnitude Pruning
 Hardware-fused computational graph export and operator constant folding via ONNX Runtime deliver >2.5x CPU inference speedups (<8 ms latency), combined with magnitude weight pruning (40% sparsity) reducing federated parameter payload sizes by 45%.
 
+### 2.15 Hierarchical Clustered Federated Learning (FedCluster)
+Overcomes client gradient cancellation across diverging psychiatric phenotypes (e.g., hyper-arousal panic vs hypo-arousal severe depression) by partitioning edge clients into specialized clinical cluster models using pairwise parameter cosine similarity:
+
+$$\text{Sim}(\Delta w_i, \Delta w_j) = \frac{\langle \Delta w_i, \Delta w_j \rangle}{\|\Delta w_i\|_2 \|\Delta w_j\|_2}$$
+
+### 2.16 Bi-Directional Cross-Modal Co-Attention & Dynamic Gated Fusion
+Computes dense affinity-based co-attention between facial video, audio prosody, and verbal text streams:
+
+$$H_v = \text{softmax}(A) A_{\text{proj}}, \quad H_a = \text{softmax}(A^T) V_{\text{proj}}, \quad g = \sigma(W_g [H_v; H_a; T_{\text{proj}}] + b_g)$$
+
+Generates interpretable cross-modal co-saliency heatmaps capturing synchronized behavioral micro-markers.
+
+### 2.17 Federated Semi-Supervised Active Learning (FedActive)
+Mitigates extreme edge label scarcity by combining Conformal prediction intervals with normalized Shannon entropy:
+
+$$\mathcal{U}(x) = \alpha \mathcal{H}(p) + \beta \frac{U(x) - L(x)}{100} + \gamma (1 - \text{Quality})$$
+
+Prioritizes the top 15-20% most informative unlabelled streams for clinician verification, while pseudo-labeling high-confidence samples.
+
+### 2.18 Clinical Pareto Risk Calibration
+Optimizes asymmetric clinical loss functions ($C_{\text{FN}} = 10 \cdot C_{\text{FP}}$) on the ROC/PR Pareto frontier to guarantee $\ge 95\%$ sensitivity for acute crisis early warning while mitigating alert fatigue.
+
 ---
 
-## 3. Experimental Evaluation Matrix (E1 – E25)
+## 3. Experimental Evaluation Matrix (E1 – E30)
 
-The system was systematically benchmarked across 25 research experiment setups:
+The system was systematically benchmarked across 30 research experiment setups:
 
 """ + metrics_table_md + """
 

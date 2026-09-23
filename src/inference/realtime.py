@@ -23,6 +23,9 @@ from src.explainability.gradcam import GradCAMExplainer
 from src.uncertainty.conformal import ConformalRiskPredictor
 from src.physiological.rppg import RemotePPGExtractor
 from src.explainability.counterfactual import CounterfactualRecourseEngine
+from src.fusion.co_attention import BiDirectionalCoAttention
+from src.continual.active_learning import FederatedActiveLearner
+from src.uncertainty.pareto_calibration import ClinicalParetoCalibrator
 from .buffer import SlidingWindowBuffer
 
 
@@ -50,6 +53,11 @@ class RealtimeInferenceEngine:
         # Phase 8: Physiological rPPG & Counterfactual Recourse
         self.rppg_extractor = RemotePPGExtractor()
         self.counterfactual_engine = CounterfactualRecourseEngine()
+
+        # Phase 9: Co-Attention, Active Learning & Pareto Calibration
+        self.co_attention = BiDirectionalCoAttention(vision_dim=18, audio_dim=16, text_dim=128, fused_dim=128)
+        self.active_learner = FederatedActiveLearner()
+        self.pareto_calibrator = ClinicalParetoCalibrator(cost_fn=10.0, cost_fp=1.0, min_sensitivity=0.95)
 
         self.smoothed_stress = 30.0
 
@@ -199,6 +207,17 @@ class RealtimeInferenceEngine:
             "quality": quality_assessment,
             "physiological_hrv": hrv_metrics.to_dict(),
             "counterfactual_recourse": recourse_result.to_dict(),
+            "pareto_triage": self.pareto_calibrator.triage_risk(stress_score),
+            "co_saliency": self.co_attention.compute_saliency_heatmap(
+                torch.from_numpy(vision_feat).unsqueeze(0).float(),
+                torch.from_numpy(a_feat).unsqueeze(0).float(),
+            ),
+            "active_learning_uncertainty": self.active_learner.compute_sample_uncertainty(
+                probs=emotion_probs.tolist() if emotion_probs is not None else [0.33, 0.33, 0.34],
+                conformal_lower=conformal_bounds["lower_bound"],
+                conformal_upper=conformal_bounds["upper_bound"],
+                confidence_score=quality_assessment.get("confidence_score", 1.0),
+            ),
             "behavior_features": {
                 "ear": float(np.round(vision_feat[0], 3)),
                 "mar": float(np.round(vision_feat[1], 3)),

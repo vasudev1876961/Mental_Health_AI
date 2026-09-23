@@ -26,11 +26,16 @@ from src.explainability.counterfactual import CounterfactualRecourseEngine
 from src.federated.async_fl import AsyncFLServer, simulate_heterogeneous_async_session
 from src.optimization.onnx_exporter import ONNXEdgeInferenceEngine
 from src.optimization.pruning import MultimodalWeightPruner
+from src.federated.clustered_fl import ClusteredFLServer, ClinicalClusterManager
+from src.fusion.co_attention import BiDirectionalCoAttention
+from src.continual.active_learning import FederatedActiveLearner
+from src.uncertainty.pareto_calibration import ClinicalParetoCalibrator
+from src.optimization.dynamic_quant import DynamicQuantizationProfiler
 
 app = FastAPI(
     title="Privacy-Preserving Mental Health AI API",
-    description="Real-Time Multimodal Mental Health Risk Assessment API with FedAsync, rPPG HRV Biomarkers, Counterfactual Recourse, and ONNX Edge Acceleration",
-    version="2.2.0",
+    description="Real-Time Multimodal Mental Health Risk Assessment API with Clustered FL, Bi-CoAttention Saliency, FedActive Learning, and Clinical Pareto Calibration",
+    version="2.3.0",
 )
 
 # Enable CORS Middleware for cross-origin client integration
@@ -50,6 +55,11 @@ async_server = AsyncFLServer(base_alpha=0.5, staleness_mode="polynomial", stalen
 counterfactual_recourse_engine = CounterfactualRecourseEngine()
 rppg_engine = RemotePPGExtractor()
 onnx_edge_engine = ONNXEdgeInferenceEngine()
+clustered_server = ClusteredFLServer(num_clusters=3, vector_dim=30)
+coattention_engine = BiDirectionalCoAttention(vision_dim=18, audio_dim=16, text_dim=128, fused_dim=128)
+active_learner = FederatedActiveLearner()
+pareto_calibrator = ClinicalParetoCalibrator(cost_fn=10.0, cost_fp=1.0, min_sensitivity=0.95)
+dynamic_quant_profiler = DynamicQuantizationProfiler()
 
 
 
@@ -205,12 +215,65 @@ class ONNXBenchmarkResponse(BaseModel):
     status: str
 
 
+class ClusterAssignRequest(BaseModel):
+    num_clients: int = 6
+    vector_dim: int = 30
+
+
+class ClusterAssignResponse(BaseModel):
+    num_clients: int
+    cluster_assignments: Dict[str, str]
+    intra_cluster_similarities: Dict[str, float]
+    phenotype_labels: Dict[str, str]
+    status: str
+
+
+class CoAttentionSaliencyRequest(BaseModel):
+    vision_features: Optional[List[float]] = None
+    audio_features: Optional[List[float]] = None
+
+
+class CoAttentionSaliencyResponse(BaseModel):
+    cross_modal_alignment_score: float
+    peak_alignment_coords: List[int]
+    peak_affinity_value: float
+    coherence_status: str
+    status: str
+
+
+class ActiveLearningQueryRequest(BaseModel):
+    num_candidates: int = 8
+    budget_fraction: float = 0.25
+
+
+class ActiveLearningQueryResponse(BaseModel):
+    total_candidates: int
+    clinician_queried_count: int
+    pseudo_labeled_count: int
+    top_query_reason: str
+    status: str
+
+
+class ParetoTriageRequest(BaseModel):
+    stress_score: float = 74.0
+    cost_fn_ratio: float = 10.0
+
+
+class ParetoTriageResponse(BaseModel):
+    input_stress_score: float
+    operating_threshold: float
+    triage_level: str
+    urgency_tier: str
+    recommended_clinical_action: str
+    status: str
+
+
 @app.get("/")
 def read_root():
     return {
         "status": "online",
         "service": "Privacy-Preserving Real-Time Multimodal Mental Health Risk Assessment API",
-        "version": "2.2.0",
+        "version": "2.3.0",
         "features": [
             "Real-Time Multimodal Inference",
             "Personalized Federated Learning (FedPer)",
@@ -223,6 +286,10 @@ def read_root():
             "Causal Multimodal Counterfactual Recourse & Actionable Interventions (Phase 8)",
             "Asynchronous Federated Learning (FedAsync) with Dynamic Staleness (Phase 8)",
             "Ultra-Low Latency ONNX Runtime Edge Acceleration & Weight Pruning (Phase 8)",
+            "Hierarchical Clustered Federated Learning (FedCluster / Clinical CFL) (Phase 9)",
+            "Bi-Directional Cross-Modal Co-Attention & Dynamic Saliency Fusion (Phase 9)",
+            "Federated Semi-Supervised Active Learning (FedActive) (Phase 9)",
+            "Clinical Pareto-Optimal Risk Calibration (Phase 9)",
         ],
     }
 
@@ -483,6 +550,100 @@ def benchmark_onnx_acceleration(req: ONNXBenchmarkRequest):
         latency_reduction_pct=bench["latency_reduction_pct"],
         status="Optimized: Hardware graph acceleration benchmark complete",
     )
+
+
+# -------------------------------------------------------------
+# PHASE 9 FRONTIER ENDPOINTS: CLUSTERED FL, CO-ATTENTION, ACTIVE LEARNING, PARETO
+# -------------------------------------------------------------
+
+@app.post("/federated/cluster/assign", response_model=ClusterAssignResponse)
+def assign_federated_clusters(req: ClusterAssignRequest):
+    """Dynamically clusters edge clients by parameter cosine similarity to resolve phenotype divergence."""
+    rng = np.random.RandomState(42)
+    client_ids = [f"client_{i}" for i in range(req.num_clients)]
+    # Generate synthetic phenotype vectors
+    updates = {}
+    for i, cid in enumerate(client_ids):
+        center = 1.0 if (i % 3 == 0) else (-1.0 if i % 3 == 1 else 0.0)
+        updates[cid] = rng.normal(center, 0.2, size=req.vector_dim).astype(np.float32)
+
+    report = clustered_server.aggregate_cluster_updates(updates)
+    phenotypes = {
+        cid: ClinicalClusterManager.PHENOTYPE_PROFILES.get(c_id, {}).get("name", "Standard Phenotype")
+        for cid, c_id in report["client_cluster_map"].items()
+    }
+
+    return ClusterAssignResponse(
+        num_clients=req.num_clients,
+        cluster_assignments=report["client_cluster_map"],
+        intra_cluster_similarities=report["intra_cluster_similarities"],
+        phenotype_labels=phenotypes,
+        status="Clustered: Hierarchical clinical phenotype partitioning complete",
+    )
+
+
+@app.post("/fusion/coattention/saliency", response_model=CoAttentionSaliencyResponse)
+def compute_coattention_saliency(req: CoAttentionSaliencyRequest):
+    """Computes fine-grained bi-directional cross-attention and temporal co-saliency."""
+    v_arr = np.array(req.vision_features, dtype=np.float32) if req.vision_features else np.random.normal(0, 1, 18).astype(np.float32)
+    a_arr = np.array(req.audio_features, dtype=np.float32) if req.audio_features else np.random.normal(0, 1, 16).astype(np.float32)
+
+    v_tensor = torch.from_numpy(v_arr).unsqueeze(0).float()
+    a_tensor = torch.from_numpy(a_arr).unsqueeze(0).float()
+
+    saliency = coattention_engine.compute_saliency_heatmap(v_tensor, a_tensor)
+
+    return CoAttentionSaliencyResponse(
+        cross_modal_alignment_score=saliency["cross_modal_alignment_score"],
+        peak_alignment_coords=saliency["peak_alignment_coords"],
+        peak_affinity_value=saliency["peak_affinity_value"],
+        coherence_status=saliency["status"],
+        status="Aligned: Bi-directional co-attention affinity calculated",
+    )
+
+
+@app.post("/active/query/sample", response_model=ActiveLearningQueryResponse)
+def query_active_learning_samples(req: ActiveLearningQueryRequest):
+    """Ranks candidate edge windows via Conformal-Entropy uncertainty to prioritize clinician review."""
+    rng = np.random.RandomState(42)
+    candidates = []
+    for i in range(req.num_candidates):
+        p_raw = rng.dirichlet([1, 1, 1])
+        candidates.append({
+            "id": f"edge_window_{i}",
+            "probs": p_raw.tolist(),
+            "conformal_lower": float(rng.uniform(20.0, 45.0)),
+            "conformal_upper": float(rng.uniform(65.0, 90.0)),
+            "confidence_score": float(rng.uniform(0.60, 1.0)),
+        })
+
+    result = active_learner.query_informative_samples(candidates, budget_fraction=req.budget_fraction)
+    top_reason = result["queried_samples"][0]["query_reason"] if result["queried_samples"] else "None"
+
+    return ActiveLearningQueryResponse(
+        total_candidates=result["total_candidates"],
+        clinician_queried_count=result["clinician_queried_count"],
+        pseudo_labeled_count=result["pseudo_labeled_count"],
+        top_query_reason=top_reason,
+        status="Queried: Conformal-entropy active sample prioritization complete",
+    )
+
+
+@app.post("/calibration/pareto/threshold", response_model=ParetoTriageResponse)
+def evaluate_pareto_triage(req: ParetoTriageRequest):
+    """Applies asymmetric clinical Pareto operating threshold to classify triage urgency."""
+    calibrator = ClinicalParetoCalibrator(cost_fn=req.cost_fn_ratio, cost_fp=1.0, min_sensitivity=0.95)
+    triage = calibrator.triage_risk(req.stress_score)
+
+    return ParetoTriageResponse(
+        input_stress_score=triage["input_stress_score"],
+        operating_threshold=triage["operating_threshold"],
+        triage_level=triage["triage_level"],
+        urgency_tier=triage["urgency_tier"],
+        recommended_clinical_action=triage["recommended_clinical_action"],
+        status="Calibrated: Asymmetric Pareto triage risk assessment complete",
+    )
+
 
 
 @app.websocket("/ws/predict")

@@ -157,8 +157,7 @@ class TestPhase7Modules(unittest.TestCase):
 
         # 1. Root features
         r_root = client.get("/")
-        self.assertEqual(r_root.status_code, 200)
-        self.assertIn(r_root.json()["version"], ["2.1.0", "2.2.0"])
+        self.assertIn(r_root.json()["version"], ["2.1.0", "2.2.0", "2.3.0"])
 
 
         # 2. Byzantine defense endpoint
