@@ -1,48 +1,45 @@
 # Developer & User Guide: Privacy-Preserving Multimodal Mental Health Risk Assessment Using Federated Learning
 
-Welcome to the official developer and user guide for the **Privacy-Preserving Real-Time Multimodal Mental Health Risk Assessment System**.
+Welcome to the comprehensive developer and user guide for the **Privacy-Preserving Real-Time Multimodal Mental Health Risk Assessment Platform (Zenith Phase 10)**.
 
 ---
 
 ## 1. System Overview & Architecture
 
-This system combines computer vision, audio processing, text NLP, temporal sequence modeling, multimodal fusion, federated learning, differential privacy, and explainable AI into a unified platform.
+This platform combines computer vision, physiological contact-free pulse extraction (rPPG HRV), vocal acoustics, RoBERTa speech NLP, bi-directional cross-modal co-attention, temporal sequence modeling, federated learning (FedAvg, FedProx, FedPer, SecAgg, FedAsync, Clustered FL, FedDG), differential privacy, multi-level explainable AI, clinician-AI decision support, crisis safety guardrails, and dynamic battery-aware runtime scheduling into a unified edge system.
 
 ```
-                         REAL-TIME CLIENT
-                                │
-             ┌──────────────────┼──────────────────┐
-             │                  │                  │
-             ▼                  ▼                  ▼
-           VIDEO              AUDIO              TEXT
-             │                  │                  │
-      Face Detection        Prosody/MFCC       Speech-to-Text
-             │                  │                  │
-      Face Landmarks        Audio Features       RoBERTa
-             │                  │                  │
-     Behavioral Features        │                  │
-             │                  │                  │
-             └──────────────────┼──────────────────┘
-                                ▼
-                       Multimodal Fusion
-                                │
-                                ▼
-                      Temporal Transformer
-                                │
-                                ▼
-                      Stress Risk Estimator
-                   (Continuous 0-100 & L/M/H)
-                                │
-                    ┌───────────┴───────────┐
-                    ▼                       ▼
-                   XAI                 Local Training
-             (SHAP/Grad-CAM)                │
-                                            ▼
-                                   Differential Privacy
-                                            │
-                                            ▼
-                                    Federated Learning
-                                   (FedAvg & FedProx)
+                         REAL-TIME EDGE CLIENT
+                                   │
+         ┌─────────────────────────┼─────────────────────────┐
+         │                         │                         │
+         ▼                         ▼                         ▼
+       VIDEO                     AUDIO                     TEXT
+         │                         │                         │
+  Face Mesh (468)             Vocal Prosody             Speech-to-Text
+  EAR, MAR, Head Pose         Pitch/F0 & MFCCs             RoBERTa
+  rPPG CHROM / HRV                 │                         │
+         │                         │                         │
+         └─────────────────────────┼─────────────────────────┘
+                                   ▼
+              Bi-Directional Cross-Modal Co-Attention & DGF
+                                   │
+                                   ▼
+                       Temporal Transformer (BiLSTM)
+                                   │
+                                   ▼
+                 Multimodal Mental Health Risk Estimator
+                  (Continuous 0-100 & Low/Med/High Risk)
+                                   │
+     ┌─────────────────────────────┼─────────────────────────────┐
+     ▼                             ▼                             ▼
+Explainable AI           Clinician-AI Copilot             Edge Safety & FL
+- SHAP Attributions      - DSM-5 MDD/GAD Criteria         - Real-Time Crisis Guardrails
+- Grad-CAM Heatmaps      - PHQ-9 & GAD-7 Estimates        - Differential Privacy (Opacus)
+- Counterfactual Recourse- Structured SOAP Notes          - Federated Learning (FedPer/SecAgg)
+                         - HL7 FHIR DiagnosticReport      - Byzantine Defense (Multi-Krum)
+                         - SHA-256 Sign-off Audit Hash    - Clustered FL & FedDG (MMD)
+                                                          - Dynamic INT8 & Battery Scheduler
 ```
 
 ---
@@ -56,7 +53,7 @@ This system combines computer vision, audio processing, text NLP, temporal seque
 ### Installation Steps
 ```bash
 # Clone the repository
-git clone https://github.com/YOUR_USERNAME/AI-MENTAL.git
+git clone https://github.com/vasudev1876961/Mental_Health_AI.git
 cd AI-MENTAL
 
 # Install dependencies
@@ -67,43 +64,59 @@ pip install -r requirements.txt
 
 ## 3. How to Launch System Features
 
-### A. Run Interactive Streamlit Web Dashboard (5 Tabs)
+### A. Master Interactive Terminal CLI
+```bash
+python launch_all.py
+```
+Provides an interactive numerical menu to launch the web dashboard, API server, terminal predictor, test suite, experiments, and paper figure generators in one click.
+
+### B. Run Interactive Streamlit Web Dashboard (8 Distinct Tabs)
 ```bash
 streamlit run dashboard/app.py
 ```
-Open browser at: **`http://localhost:8501`**
-- **Tab 1**: Real-Time Multimodal Assessment (Vision 468 mesh, Audio MFCC, NLP RoBERTa, SHAP XAI, Grad-CAM, and 90% Conformal Interval bounds)
-- **Tab 2**: Personalized Federated Learning (FedPer client profiles & head adaptation)
-- **Tab 3**: Cryptographic Secure Aggregation (SecAgg zero-sum noise cancellation)
-- **Tab 4**: Self-Supervised Contrastive Alignment (InfoNCE cosine hyper-sphere)
-- **Tab 5**: Byzantine Poisoning Defense, Conformal Bounds, Dynamic Sensor Imputation & Continual Learning (EWC)
+Open your browser at: **`http://localhost:8501`**
+- **Tab 1: 🎥 Real-Time Multimodal Assessment**: Live webcam video feed, 468-point 3D face mesh, rPPG heart rate, EAR/MAR gauges, stress timeline, SHAP attributions, Grad-CAM heatmaps, and distribution-free conformal prediction intervals.
+- **Tab 2: 🤝 Personalized Federated Learning (FedPer)**: Edge client adaptation simulator preserving personal heads while synchronizing global shared backbones.
+- **Tab 3: 🔒 Cryptographic Secure Aggregation (SecAgg)**: Zero-sum pairwise secret sharing verifying exact global summation without raw gradient leakage.
+- **Tab 4: 🌌 Multimodal Contrastive Alignment (InfoNCE)**: Hyper-spherical representation space aligning video, audio, and text embeddings against missing sensor modalities.
+- **Tab 5: 🛡️ Byzantine Defense & Conformal Uncertainty**: Multi-Krum / Trimmed Mean defense against adversarial edge poisoning attacks and conformal prediction set validation.
+- **Tab 6: 🚀 Phase 8: Physiological rPPG & Edge Optimization**: Contact-free CHROM pulse wave, HRV frequency spectrum, algorithmic counterfactual recourse interventions, FedAsync staleness simulator, and ONNX Runtime speedup.
+- **Tab 7: 🧬 Phase 9: Clustered FL, Bi-CoAttention & Clinical Active Learning**: Cosine parameter clustering across psychiatric phenotypes, cross-modal co-saliency heatmaps, FedActive clinician review budget curves, and Pareto ROC operating frontiers.
+- **Tab 8: 🩺 Phase 10: Clinician Copilot, FedDG & Crisis Safeguards**: Automated psychiatric SOAP note generator, estimated PHQ-9 & GAD-7 severity scoring, DSM-5 symptom radar, HL7 FHIR DiagnosticReport JSON export, tamper-proof SHA-256 audit hashing, 988 Crisis Lifeline escalation, FedDG cross-domain MMD simulator, and edge battery scheduler.
 
-### B. Run FastAPI REST & WebSocket Edge API Server
+### C. Run FastAPI REST & WebSocket Edge API Server (v2.4.0)
 ```bash
 uvicorn src.api.server:app --reload --port 8000
 ```
-- Interactive Swagger API Docs: **`http://127.0.0.1:8000/docs`**
-- WebSocket Streaming Endpoint: `ws://127.0.0.1:8000/ws/predict`
-- Byzantine Defense Endpoint: `POST /defense/byzantine/aggregate`
-- Conformal Prediction Endpoint: `POST /uncertainty/conformal/predict`
-- Sensor Imputation Endpoint: `POST /fusion/impute`
+- Interactive OpenAPI / Swagger Docs: **`http://127.0.0.1:8000/docs`**
+- WebSocket Real-Time Stream: `ws://127.0.0.1:8000/ws/predict`
+- Key REST Endpoints:
+  - `POST /copilot/generate_soap_report`
+  - `POST /safety/crisis_triage`
+  - `POST /federated/domain_generalization`
+  - `POST /edge/adaptive_profile`
+  - `POST /calibration/pareto/threshold`
+  - `POST /active/query/sample`
+  - `POST /fusion/coattention/saliency`
+  - `POST /physiological/rppg/extract`
+  - `POST /explainability/counterfactual/recourse`
 
-### C. Run Terminal Sample Predictor Demo
+### D. Run Quick Sample Terminal Predictor Demo
 ```bash
 python demo_predict_sample.py
 ```
 
-### D. Run Automated Research Experiments (E1 to E20)
+### E. Run Automated Research Experiments (E1 to E35)
 ```bash
 python experiments/run_experiments.py --mode fast
 ```
-Outputs exported to `outputs/metrics/experiment_summary.csv` and `outputs/metrics/experiment_summary.json`.
+Outputs saved to `outputs/metrics/experiment_summary.csv` and `outputs/metrics/experiment_summary.json`.
 
-### E. Generate 300 DPI Publication Paper Figures (Fig 1 to 10)
+### F. Generate 300 DPI Publication Paper Figures (Figures 1 to 22)
 ```bash
 python experiments/generate_paper_plots.py
 ```
-Figures saved to `outputs/plots/`:
+Figures exported to `outputs/plots/`:
 - `fig1_modality_ablation.png`
 - `fig2_federated_heterogeneity.png`
 - `fig3_privacy_utility_tradeoff.png`
@@ -114,19 +127,31 @@ Figures saved to `outputs/plots/`:
 - `fig8_byzantine_defense_robustness.png`
 - `fig9_conformal_coverage_calibration.png`
 - `fig10_continual_ewc_forgetting.png`
+- `fig11_rppg_hrv_pulse_wave.png`
+- `fig12_counterfactual_recourse_interventions.png`
+- `fig13_fedasync_staleness_convergence.png`
+- `fig14_onnx_runtime_speedup.png`
+- `fig15_clustered_fl_similarity.png`
+- `fig16_coattention_saliency_matrix.png`
+- `fig17_fedactive_budget_curve.png`
+- `fig18_clinical_pareto_frontier.png`
+- `fig19_feddg_domain_invariance.png`
+- `fig20_copilot_clinical_concordance.png`
+- `fig21_edge_battery_tradeoff.png`
+- `fig22_crisis_safety_roc.png`
 
-### F. Export Academic Research Paper Draft & LaTeX Manuscript
+### G. Export Academic Research Paper Draft & LaTeX Manuscript
 ```bash
 python experiments/export_paper_report.py
 python experiments/build_latex_paper.py
 ```
-Manuscript drafts generated at `outputs/paper_draft.md` and `outputs/paper_ieee.tex`.
+Generates `outputs/paper_draft.md` and publication-ready IEEE conference LaTeX file `outputs/paper_ieee.tex`.
 
 ---
 
 ## 4. Running Docker Stack
 
-Launch the containerized Streamlit Dashboard and FastAPI server simultaneously:
+Launch containerized Streamlit Dashboard and FastAPI server:
 ```bash
 docker-compose up --build
 ```
@@ -135,18 +160,18 @@ docker-compose up --build
 
 ---
 
-## 5. Running the Unit Test Suite (55 Tests)
+## 5. Running the Complete Automated Unit Test Suite
 
-Run the full automated test suite across all 18 modules:
+Run the full automated test suite across all 21 test modules:
 ```bash
-python -m unittest discover -s tests -v
+pytest tests/ -v
 ```
 
 ---
 
 ## 6. Dataset Integration (DAIC-WOZ / RECOLA / AVEC)
 
-Convert raw public datasets into subject-partitioned format:
+Convert raw public clinical datasets into subject-partitioned format:
 ```bash
 python -m src.data.ingest_daic_woz --data-dir path/to/daic_woz --output-dir data/processed
 ```

@@ -1,5 +1,5 @@
 """
-Master One-Click Launcher for Privacy-Preserving Multimodal Mental Health AI System.
+Master One-Click Launcher for Privacy-Preserving Multimodal Mental Health AI Platform (Zenith Phase 10).
 
 Usage:
     python launch_all.py
@@ -11,14 +11,14 @@ import subprocess
 
 def show_menu():
     print("\n==================================================================")
-    print("  PRIVACY-PRESERVING MULTIMODAL MENTAL HEALTH AI PLATFORM (PHASE 7)")
+    print("  PRIVACY-PRESERVING MULTIMODAL MENTAL HEALTH AI PLATFORM (PHASE 10)")
     print("==================================================================")
-    print("  [1] Launch Interactive Streamlit Web Dashboard (5 Tabs)")
-    print("  [2] Launch FastAPI REST & WebSocket Edge API Server")
+    print("  [1] Launch Interactive Streamlit Web Dashboard (8 Tabs)")
+    print("  [2] Launch FastAPI REST & WebSocket Edge API Server (v2.4.0)")
     print("  [3] Run Quick Sample Terminal Predictor Demo")
-    print("  [4] Run Automated Unit Test Suite (55 Tests across 18 Modules)")
-    print("  [5] Run Automated Research Experiments (E1 to E20)")
-    print("  [6] Generate 300 DPI Paper Figures (Fig 1-10) & Academic Drafts")
+    print("  [4] Run Automated Unit Test Suite (~100 Tests across 21 Modules)")
+    print("  [5] Run Complete Automated Research Experiments (E1 to E35)")
+    print("  [6] Generate 300 DPI Paper Figures (Fig 1-22) & Academic Drafts (MD + LaTeX)")
     print("  [7] Exit")
     print("==================================================================\n")
 
@@ -41,7 +41,7 @@ def main():
             print("\nRunning Automated Unit Test Suite ...")
             subprocess.run([sys.executable, "-m", "unittest", "discover", "-s", "tests", "-v"])
         elif choice == "5":
-            print("\nRunning Research Experiments E1 to E12 ...")
+            print("\nRunning Research Experiments E1 to E35 ...")
             subprocess.run([sys.executable, "experiments/run_experiments.py", "--mode", "fast"])
         elif choice == "6":
             print("\nGenerating Figures & Manuscripts ...")

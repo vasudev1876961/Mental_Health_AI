@@ -31,11 +31,15 @@ from src.fusion.co_attention import BiDirectionalCoAttention
 from src.continual.active_learning import FederatedActiveLearner
 from src.uncertainty.pareto_calibration import ClinicalParetoCalibrator
 from src.optimization.dynamic_quant import DynamicQuantizationProfiler
+from src.clinical.copilot import ClinicalCopilotEngine
+from src.clinical.safety_guardrails import CrisisSafetyGuardrails
+from src.federated.domain_generalization import DomainInvariantAggregator, simulate_feddg_cross_domain_adaptation
+from src.optimization.adaptive_scheduler import EdgeAdaptiveScheduler
 
 app = FastAPI(
     title="Privacy-Preserving Mental Health AI API",
-    description="Real-Time Multimodal Mental Health Risk Assessment API with Clustered FL, Bi-CoAttention Saliency, FedActive Learning, and Clinical Pareto Calibration",
-    version="2.3.0",
+    description="Real-Time Multimodal Mental Health Risk Assessment API with Clinician-AI Copilot, Crisis Safety Guardrails, Federated Domain Generalization (FedDG), and Adaptive Edge Scheduling",
+    version="2.4.0",
 )
 
 # Enable CORS Middleware for cross-origin client integration
@@ -60,6 +64,10 @@ coattention_engine = BiDirectionalCoAttention(vision_dim=18, audio_dim=16, text_
 active_learner = FederatedActiveLearner()
 pareto_calibrator = ClinicalParetoCalibrator(cost_fn=10.0, cost_fp=1.0, min_sensitivity=0.95)
 dynamic_quant_profiler = DynamicQuantizationProfiler()
+clinical_copilot = ClinicalCopilotEngine()
+crisis_guardrails = CrisisSafetyGuardrails()
+domain_aggregator = DomainInvariantAggregator()
+edge_scheduler = EdgeAdaptiveScheduler()
 
 
 
@@ -265,6 +273,92 @@ class ParetoTriageResponse(BaseModel):
     triage_level: str
     urgency_tier: str
     recommended_clinical_action: str
+    status: str
+
+
+class SoapReportRequest(BaseModel):
+    patient_id: str = "PT-8821"
+    stress_score: float = 74.5
+    stress_level: str = "HIGH"
+    conformal_lower: float = 68.0
+    conformal_upper: float = 82.0
+    fatigue_score: float = 65.0
+    attention_score: float = 42.0
+    mean_hr: float = 88.0
+    rmssd: float = 19.5
+    lf_hf_ratio: float = 2.9
+    transcript_text: Optional[str] = "I've been feeling exhausted and unable to sleep for weeks."
+    clinician_notes: Optional[str] = "Patient appears visibly tense with blunted affect."
+
+
+class SoapReportResponse(BaseModel):
+    patient_id: str
+    session_timestamp: str
+    subjective: str
+    objective: str
+    assessment: str
+    plan: str
+    estimated_phq9: int
+    phq9_severity: str
+    estimated_gad7: int
+    gad7_severity: str
+    dsm5_positive_criteria: int
+    fhir_report_id: str
+    audit_hash: str
+    status: str
+
+
+class CrisisTriageRequest(BaseModel):
+    stress_score: float = 82.0
+    transcript_text: Optional[str] = None
+    mean_hr: float = 95.0
+    rmssd: float = 14.0
+    lf_hf_ratio: float = 3.6
+    conformal_upper_bound: Optional[float] = 88.0
+
+
+class CrisisTriageResponse(BaseModel):
+    escalation_tier: str
+    requires_immediate_dispatch: bool
+    crisis_text_detected: bool
+    autonomic_crisis: bool
+    matched_cues: List[str]
+    emergency_resources: Dict[str, str]
+    clinical_action_protocol: List[str]
+    status: str
+
+
+class DomainGeneralizationRequest(BaseModel):
+    num_clients: int = 6
+    feature_dim: int = 16
+
+
+class DomainGeneralizationResponse(BaseModel):
+    num_clients: int
+    domains: List[str]
+    fedavg_alignment: float
+    feddg_alignment: float
+    ood_mae_fedavg: float
+    ood_mae_feddg: float
+    generalization_gain_pct: float
+    status: str
+
+
+class EdgeAdaptiveProfileRequest(BaseModel):
+    battery_pct: float = 35.0
+    is_charging: bool = False
+    thermal_state: str = "FAIR"
+    network_state: str = "CELLULAR"
+
+
+class EdgeAdaptiveProfileResponse(BaseModel):
+    selected_tier: str
+    fps_target: int
+    power_draw_mw: float
+    latency_ms: float
+    estimated_battery_hours_remaining: float
+    relative_battery_life_factor: float
+    offline_queued_samples: int
     status: str
 
 
@@ -642,6 +736,107 @@ def evaluate_pareto_triage(req: ParetoTriageRequest):
         urgency_tier=triage["urgency_tier"],
         recommended_clinical_action=triage["recommended_clinical_action"],
         status="Calibrated: Asymmetric Pareto triage risk assessment complete",
+    )
+
+
+@app.post("/copilot/generate_soap_report", response_model=SoapReportResponse)
+def generate_soap_report(req: SoapReportRequest):
+    """Generates structured psychiatric SOAP note, estimated PHQ-9 & GAD-7, and FHIR resource."""
+    hrv = {"mean_hr": req.mean_hr, "rmssd": req.rmssd, "lf_hf_ratio": req.lf_hf_ratio, "snr_db": 14.5}
+    soap = clinical_copilot.generate_soap_note(
+        patient_id=req.patient_id,
+        stress_score=req.stress_score,
+        stress_level=req.stress_level,
+        conformal_interval=(req.conformal_lower, req.conformal_upper),
+        fatigue_score=req.fatigue_score,
+        attention_score=req.attention_score,
+        hrv_metrics=hrv,
+        transcript_text=req.transcript_text,
+        clinician_notes=req.clinician_notes,
+    )
+    fhir = clinical_copilot.export_fhir_diagnostic_report(soap, clinician_id="Dr. Attending, MD")
+    signed = clinical_copilot.sign_off_report(soap, clinician_id="Dr. Attending, MD", clinician_signature="SIG-VERIFIED")
+
+    return SoapReportResponse(
+        patient_id=soap["patient_id"],
+        session_timestamp=soap["session_timestamp"],
+        subjective=soap["subjective"],
+        objective=soap["objective"],
+        assessment=soap["assessment"],
+        plan=soap["plan"],
+        estimated_phq9=soap["phq9_summary"]["estimated_phq9"],
+        phq9_severity=soap["phq9_summary"]["severity_band"],
+        estimated_gad7=soap["gad7_summary"]["estimated_gad7"],
+        gad7_severity=soap["gad7_summary"]["severity_band"],
+        dsm5_positive_criteria=soap["dsm5_summary"]["positive_criteria_count"],
+        fhir_report_id=fhir["id"],
+        audit_hash=signed["cryptographic_audit_hash"],
+        status="Generated: Clinical psychiatric SOAP report and FHIR resource complete",
+    )
+
+
+@app.post("/safety/crisis_triage", response_model=CrisisTriageResponse)
+def evaluate_crisis_safety(req: CrisisTriageRequest):
+    """Scans acoustic transcript and autonomic biomarkers for emergency crisis escalation."""
+    hrv = {"mean_hr": req.mean_hr, "rmssd": req.rmssd, "lf_hf_ratio": req.lf_hf_ratio}
+    res = crisis_guardrails.evaluate_safety_escalation(
+        stress_score=req.stress_score,
+        hrv_metrics=hrv,
+        transcript_text=req.transcript_text,
+        conformal_upper_bound=req.conformal_upper_bound,
+    )
+
+    return CrisisTriageResponse(
+        escalation_tier=res["escalation_tier"],
+        requires_immediate_dispatch=res["requires_immediate_dispatch"],
+        crisis_text_detected=res["text_scan"]["crisis_keywords_detected"],
+        autonomic_crisis=res["physio_scan"]["autonomic_crisis"],
+        matched_cues=res["text_scan"]["matched_cues"],
+        emergency_resources=res["emergency_resources"],
+        clinical_action_protocol=res["clinical_action_protocol"],
+        status="Evaluated: Real-time psychiatric crisis safety guardrails complete",
+    )
+
+
+@app.post("/federated/domain_generalization", response_model=DomainGeneralizationResponse)
+def evaluate_domain_generalization(req: DomainGeneralizationRequest):
+    """Simulates cross-cohort domain shift and evaluates invariant FedDG generalization."""
+    sim = simulate_feddg_cross_domain_adaptation(
+        num_clients=req.num_clients,
+        feature_dim=req.feature_dim,
+    )
+    return DomainGeneralizationResponse(
+        num_clients=sim["num_clients"],
+        domains=sim["domains"],
+        fedavg_alignment=sim["fedavg_alignment"],
+        feddg_alignment=sim["feddg_alignment"],
+        ood_mae_fedavg=sim["ood_mae_fedavg"],
+        ood_mae_feddg=sim["ood_mae_feddg"],
+        generalization_gain_pct=sim["generalization_gain_pct"],
+        status="Evaluated: Invariant federated domain generalization simulated",
+    )
+
+
+@app.post("/edge/adaptive_profile", response_model=EdgeAdaptiveProfileResponse)
+def evaluate_edge_adaptive_profile(req: EdgeAdaptiveProfileRequest):
+    """Determines optimal edge execution fidelity tier based on battery, thermal, and network."""
+    prof = edge_scheduler.schedule_edge_profile(
+        battery_pct=req.battery_pct,
+        is_charging=req.is_charging,
+        thermal_state=req.thermal_state,
+        network_state=req.network_state,
+    )
+    cfg = prof["pipeline_configuration"]
+
+    return EdgeAdaptiveProfileResponse(
+        selected_tier=prof["selected_tier"],
+        fps_target=cfg["fps_target"],
+        power_draw_mw=prof["power_draw_mw"],
+        latency_ms=cfg["latency_ms"],
+        estimated_battery_hours_remaining=prof["estimated_battery_hours_remaining"],
+        relative_battery_life_factor=prof["relative_battery_life_factor"],
+        offline_queued_samples=prof["offline_queued_samples"],
+        status="Scheduled: Edge power-aware execution tier selected",
     )
 
 

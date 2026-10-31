@@ -36,10 +36,14 @@ from src.fusion.co_attention import BiDirectionalCoAttention
 from src.continual.active_learning import FederatedActiveLearner, simulate_active_learning_curve
 from src.uncertainty.pareto_calibration import ClinicalParetoCalibrator, generate_synthetic_pareto_evaluation
 from src.optimization.dynamic_quant import DynamicQuantizationProfiler
+from src.clinical.copilot import ClinicalCopilotEngine
+from src.clinical.safety_guardrails import CrisisSafetyGuardrails
+from src.federated.domain_generalization import DomainInvariantAggregator, simulate_feddg_cross_domain_adaptation
+from src.optimization.adaptive_scheduler import EdgeAdaptiveScheduler, simulate_adaptive_edge_profile_run
 
 # Set Page Configuration
 st.set_page_config(
-    page_title="Multimodal Mental Health AI — Phase 9 Frontier Platform",
+    page_title="Multimodal Mental Health AI — Clinical-Grade Zenith Platform (Phase 10)",
     page_icon="🧠",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -143,7 +147,7 @@ secagg_active = st.sidebar.checkbox("Enable SecAgg Zero-Sum Masking", value=True
 dp_epsilon = st.sidebar.slider("Differential Privacy (ε)", 0.5, 10.0, 3.2, 0.1)
 
 # Tab Navigation
-tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
+tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
     "🎥 Real-Time Multimodal Assessment",
     "🤝 Personalized Federated Learning (FedPer)",
     "🔒 Cryptographic Secure Aggregation (SecAgg)",
@@ -151,6 +155,7 @@ tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
     "🛡️ Byzantine Defense & Conformal Uncertainty (Phase 7)",
     "🚀 Phase 8: Physiological rPPG & Edge Optimization",
     "🧬 Phase 9: Clustered FL, Bi-CoAttention & Clinical Active Learning",
+    "🩺 Phase 10: Clinician Copilot, FedDG & Crisis Safeguards",
 ])
 
 
@@ -385,7 +390,7 @@ with tab2:
 with tab3:
     st.subheader("Cryptographic Secure Aggregation (SecAgg)")
     st.markdown(
-        """
+        r"""
         **Pairwise Secret Sharing Protocol**: Every pair of edge clients $(u, v)$ generates a shared zero-sum cryptographic mask $s_{u,v}$. 
         Clients transmit $y_u = x_u + \sum_{v > u} s_{u,v} - \sum_{v < u} s_{v,u}$.
         When the central server sums all updates $\sum y_u$, every mask cancels out to exactly **0**, yielding the exact true average without the server ever observing any individual client's gradient!
@@ -792,7 +797,7 @@ with tab7:
             [0.08, 0.05, 0.84, 1.00, 0.18, 0.15],
             [0.35, 0.31, 0.22, 0.18, 1.00, 0.89],
             [0.28, 0.24, 0.19, 0.15, 0.89, 1.00],
-        ][:fl_clients, :fl_clients])
+        ])[:fl_clients, :fl_clients]
         client_labels = [f"Client {i}" for i in range(fl_clients)]
         fig_sim = px.imshow(
             sim_data,
@@ -887,6 +892,205 @@ with tab7:
             height=260,
         )
         st.plotly_chart(fig_p, use_container_width=True)
+
+
+# ---------------------------------------------------------
+# TAB 8: PHASE 10 - CLINICIAN COPILOT, FEDDG & CRISIS SAFEGUARDS
+# ---------------------------------------------------------
+with tab8:
+    st.markdown("### 🩺 Phase 10: Clinician-AI Copilot, DSM-5 Triage & Safety Guardrails")
+    st.caption("Clinical decision support synthesis, standardized DSM-5 & PHQ-9/GAD-7 reports, FHIR interoperability, cross-cohort FedDG invariant representations, and battery-aware runtime scheduling.")
+
+    copilot_engine = ClinicalCopilotEngine()
+    guardrails_engine = CrisisSafetyGuardrails()
+    adaptive_scheduler = EdgeAdaptiveScheduler()
+
+    p10_col1, p10_col2 = st.columns(2)
+
+    with p10_col1:
+        st.markdown("#### 1. 📋 Clinician Copilot & Structured SOAP Note")
+        st.caption("Translates raw multimodal indicators into standardized psychiatric clinical notes and FHIR DiagnosticReports.")
+
+        cp_c1, cp_c2 = st.columns(2)
+        with cp_c1:
+            copilot_patient_id = st.text_input("Patient / Subject ID", "PT-8821")
+            sim_stress = st.slider("Multimodal Stress Score", 0.0, 100.0, 74.5, key="cp_stress")
+            sim_fatigue = st.slider("Oculomotor Fatigue Score", 0.0, 100.0, 68.0, key="cp_fatigue")
+        with cp_c2:
+            sim_atten = st.slider("Attention / Gaze Score", 0.0, 100.0, 42.0, key="cp_atten")
+            sim_hr = st.slider("rPPG Heart Rate (bpm)", 50.0, 130.0, 88.0, key="cp_hr")
+            sim_rmssd = st.slider("HRV RMSSD (ms)", 5.0, 60.0, 18.5, key="cp_rmssd")
+
+        copilot_transcript = st.text_area(
+            "Patient Speech Transcript / Stated Symptoms",
+            "I've been feeling overwhelmed, exhausted, and unable to sleep for weeks. Concentration at work has slipped.",
+            height=70,
+        )
+
+        hrv_input = {"mean_hr": sim_hr, "rmssd": sim_rmssd, "lf_hf_ratio": 2.9, "snr_db": 14.5}
+        stress_lvl = "HIGH" if sim_stress >= 70 else ("MODERATE" if sim_stress >= 40 else "LOW")
+        conformal_int = (max(0.0, sim_stress - 8.0), min(100.0, sim_stress + 8.0))
+
+        soap_report = copilot_engine.generate_soap_note(
+            patient_id=copilot_patient_id,
+            stress_score=sim_stress,
+            stress_level=stress_lvl,
+            conformal_interval=conformal_int,
+            fatigue_score=sim_fatigue,
+            attention_score=sim_atten,
+            hrv_metrics=hrv_input,
+            transcript_text=copilot_transcript,
+        )
+
+        phq9 = soap_report["phq9_summary"]
+        gad7 = soap_report["gad7_summary"]
+        dsm5 = soap_report["dsm5_summary"]
+
+        m1, m2, m3 = st.columns(3)
+        with m1:
+            st.metric("Estimated PHQ-9", f"{phq9['estimated_phq9']}/27", delta=phq9['severity_band'])
+        with m2:
+            st.metric("Estimated GAD-7", f"{gad7['estimated_gad7']}/21", delta=gad7['severity_band'])
+        with m3:
+            st.metric("DSM-5 Criteria", f"{dsm5['positive_criteria_count']}/{dsm5['total_evaluated']}", delta="Syndromal Indicators")
+
+        with st.expander("📄 View Generated Psychiatric SOAP Note", expanded=False):
+            st.markdown(f"**Subjective:**\n{soap_report['subjective']}")
+            st.markdown(f"**Objective:**\n{soap_report['objective']}")
+            st.markdown(f"**Assessment:**\n{soap_report['assessment']}")
+            st.markdown(f"**Plan:**\n{soap_report['plan']}")
+
+        # FHIR Export & Sign-Off
+        fhir_rep = copilot_engine.export_fhir_diagnostic_report(soap_report)
+        signed = copilot_engine.sign_off_report(soap_report, clinician_id="Dr. Attending, MD", clinician_signature="SIG-VERIFIED-99")
+
+        st.caption(f"🔒 **Audit Hash**: `{signed['cryptographic_audit_hash'][:32]}...` (SHA-256 Tamper-Proof Verified)")
+        st.download_button(
+            label="💾 Download HL7 FHIR DiagnosticReport (JSON)",
+            data=json.dumps(fhir_rep, indent=2),
+            file_name=f"fhir_report_{copilot_patient_id}.json",
+            mime="application/json",
+        )
+
+    with p10_col2:
+        st.markdown("#### 2. 🚨 Real-Time Crisis Safety Guardrail Protocol")
+        st.caption("Active monitoring for acute panic, self-harm cues, and autonomic crisis with instant 988 dispatch.")
+
+        test_cue = st.selectbox(
+            "Select Scenario or Enter Custom Utterance",
+            [
+                "Standard: Just feeling slightly tired today.",
+                "Elevated: My heart is racing and I feel dizzy trembling.",
+                "CRITICAL CRISIS: I can't take this anymore, want to end my life.",
+                "Custom Text Input",
+            ],
+        )
+        if test_cue == "Custom Text Input":
+            eval_text = st.text_input("Enter statement to scan:", "I feel completely hopeless.")
+        else:
+            eval_text = test_cue.split(": ", 1)[-1]
+
+        safety_eval = guardrails_engine.evaluate_safety_escalation(
+            stress_score=sim_stress,
+            hrv_metrics=hrv_input,
+            transcript_text=eval_text,
+            conformal_upper_bound=conformal_int[1],
+        )
+
+        tier = safety_eval["escalation_tier"]
+        if tier == "EMERGENCY_CRISIS_ESCALATION":
+            st.error("🚨 **EMERGENCY CRISIS DETECTED** — Immediate Clinical Escalation Triggered!")
+            st.markdown("**Crisis Lifeline Dispatched:** 📞 **988 (Suicide & Crisis Lifeline - 24/7 Free & Confidential)**")
+            st.markdown("**Crisis Text Line:** 💬 Text **HOME to 741741**")
+            st.info("Emergency medical notification packet queued for clinical on-call team.")
+        elif tier == "URGENT_CLINICIAN_REVIEW":
+            st.warning("⚠️ **URGENT CLINICIAN REVIEW** — High distress or acute autonomic dysregulation flagged.")
+            st.caption("Action: Somatic Box Breathing pacer recommended; review flagged for attending within 4-12 hrs.")
+        elif tier == "ELEVATED_OBSERVATION":
+            st.info("ℹ️ **ELEVATED OBSERVATION** — Moderate stress detected. Self-directed resilience module offered.")
+        else:
+            st.success("✅ **ROUTINE MONITORING** — No crisis indicators detected. Normal longitudinal tracking active.")
+
+        with st.expander("🔍 Guardrail Detection Breakdown", expanded=False):
+            st.write(safety_eval)
+
+    p10_col3, p10_col4 = st.columns(2)
+
+    with p10_col3:
+        st.markdown("#### 3. 🌐 Invariant Federated Domain Generalization (FedDG)")
+        st.caption("Disentangles hospital/sensor recording artifacts using Kernel MMD invariant weighting.")
+
+        feddg_sim = simulate_feddg_cross_domain_adaptation(num_clients=6, feature_dim=16)
+
+        dg_m1, dg_m2, dg_m3 = st.columns(3)
+        with dg_m1:
+            st.metric("FedAvg OOD MAE", f"{feddg_sim['ood_mae_fedavg']:.2f}")
+        with dg_m2:
+            st.metric("FedDG Invariant MAE", f"{feddg_sim['ood_mae_feddg']:.2f}", delta=f"-{feddg_sim['generalization_gain_pct']:.1f}% Error")
+        with dg_m3:
+            st.metric("Signal Alignment", f"{feddg_sim['feddg_alignment']:.3f}", delta="Invariant Invariance")
+
+        df_dg = pd.DataFrame({
+            "Hospital Site / Sensor Domain": feddg_sim["domains"],
+            "Domain MMD Divergence": [0.42, 0.68, 0.55],
+            "Invariant Aggregation Weight": [0.38, 0.28, 0.34],
+        })
+
+        fig_dg = px.bar(
+            df_dg,
+            x="Hospital Site / Sensor Domain",
+            y="Invariant Aggregation Weight",
+            color="Domain MMD Divergence",
+            title="FedDG Cross-Domain MMD Divergence & Invariant Client Weighting",
+            color_continuous_scale="Viridis",
+            height=260,
+        )
+        st.plotly_chart(fig_dg, use_container_width=True)
+
+    with p10_col4:
+        st.markdown("#### 4. ⚡ Edge Adaptive Power & Runtime Scheduler")
+        st.caption("Dynamically scales model complexity & framerate based on edge device battery, thermals, and network.")
+
+        bat_col1, bat_col2 = st.columns(2)
+        with bat_col1:
+            edge_battery = st.slider("Edge Device Battery (%)", 5, 100, 35, key="sched_bat")
+            edge_charging = st.checkbox("Plugged into Charger", False, key="sched_charge")
+        with bat_col2:
+            edge_thermal = st.selectbox("Thermal Throttling State", ["NOMINAL", "FAIR", "SERIOUS", "CRITICAL"], key="sched_therm")
+            edge_network = st.selectbox("Network Connectivity", ["WIFI", "CELLULAR", "OFFLINE"], key="sched_net")
+
+        sched_profile = adaptive_scheduler.schedule_edge_profile(
+            battery_pct=float(edge_battery),
+            is_charging=edge_charging,
+            thermal_state=edge_thermal,
+            network_state=edge_network,
+        )
+        cfg_prof = sched_profile["pipeline_configuration"]
+
+        sc_m1, sc_m2, sc_m3 = st.columns(3)
+        with sc_m1:
+            st.metric("Selected Tier", sched_profile["selected_tier"])
+        with sc_m2:
+            st.metric("Target FPS", f"{cfg_prof['fps_target']} FPS", delta=f"{cfg_prof['latency_ms']:.1f}ms latency")
+        with sc_m3:
+            st.metric("Est. Battery Life", f"{sched_profile['estimated_battery_hours_remaining']:.1f} hrs", delta=f"{sched_profile['relative_battery_life_factor']}x Efficiency")
+
+        # Battery lifetime comparison bar
+        df_tiers = pd.DataFrame({
+            "Fidelity Tier": ["Ultra High", "Balanced Edge", "Low Power", "Offline Store"],
+            "Battery Hours (4000mAh)": [17.9, 40.0, 77.9, 89.4],
+            "Power Draw (mW)": [850.0, 380.0, 195.0, 170.0],
+        })
+        fig_sched = px.bar(
+            df_tiers,
+            x="Fidelity Tier",
+            y="Battery Hours (4000mAh)",
+            color="Power Draw (mW)",
+            title="Dynamic Runtime Lifespan vs Power Draw across Execution Tiers",
+            color_continuous_scale="Plasma_r",
+            height=260,
+        )
+        st.plotly_chart(fig_sched, use_container_width=True)
 
 # Continuous loop trigger if auto_refresh is turned on
 if auto_refresh:

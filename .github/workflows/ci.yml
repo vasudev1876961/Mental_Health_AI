@@ -26,14 +26,23 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Run Full Unit Test Suite (39 Tests)
+    - name: Run Full Automated Unit Test Suite
       run: |
-        python -m unittest discover -s tests
+        pytest tests/ -v
 
     - name: Verify Synthetic Data Generator
       run: |
         python -m src.data.dataset_generator --num-subjects 10 --output-dir data/ci_test
 
-    - name: Run Fast Experiment Runner Verification
+    - name: Run Fast Benchmark Matrix (E1 to E35)
       run: |
         python experiments/run_experiments.py --mode fast
+
+    - name: Verify Paper Figure Generation (Figures 1 to 22)
+      run: |
+        python experiments/generate_paper_plots.py
+
+    - name: Verify Academic Manuscripts Generation (MD & LaTeX)
+      run: |
+        python experiments/export_paper_report.py
+        python experiments/build_latex_paper.py
